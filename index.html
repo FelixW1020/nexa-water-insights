@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Water Cost Projection and Simulator | Nexa</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f3f8fc;--surface:#fff;--bar:#e8f4fb;--ink:#0b1b33;--mute:#51627a;--line:#d3e2ee;--blue:#2457f5;--blue-ink:#fff;--cyan:#3ab4f2;--hero1:#071a3a;--hero2:#0d3b7a;--warn-bg:#fff4dc;--warn-ink:#6b4500;--ok:#0a7d5a;--bad:#c62f3b;--badbg:#fde8ea;--okbg:#e3f6ee;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#071426;--surface:#0e2038;--bar:#0b1c33;--ink:#e8f1fb;--mute:#9db0c8;--line:#1e3856;--blue:#4d7cff;--warn-bg:#3a2d0c;--warn-ink:#ffd98a;--ok:#4fd1a5;--bad:#ff7b86;--badbg:#3b1820;--okbg:#0e3328}
+:root:not([data-theme="light"]) .logo{filter:invert(1) hue-rotate(180deg)}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+header{background:var(--bar);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:12px 32px}
+.logo{height:52px;width:auto;display:block}
+.btn{background:var(--blue);color:var(--blue-ink);border:0;border-radius:6px;padding:10px 20px;font:600 14px Inter,sans-serif;cursor:pointer}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.hero{background:radial-gradient(circle at 85% 20%,rgba(58,180,242,.45),transparent 40%),linear-gradient(120deg,var(--hero1),var(--hero2));color:#fff;padding:40px 32px 80px;border-bottom:6px solid var(--cyan)}
+.hero h1{font:400 clamp(28px,4.5vw,50px)/1.12 Comfortaa,sans-serif;margin:0 0 12px;max-width:17em}
+.hero p{margin:0 0 20px;max-width:46em;color:#cfe3f7;font-size:17px}
+.controls{display:flex;gap:14px;flex-wrap:wrap}
+.controls label{display:flex;flex-direction:column;font-size:12px;color:#cfe3f7;gap:4px}
+select{padding:9px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.95);color:#0b1b33;font:500 14px Inter,sans-serif;min-width:200px}
+main{max-width:1120px;margin:-48px auto 40px;padding:0 24px;display:flex;flex-direction:column;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;box-shadow:0 6px 20px rgba(7,26,58,.08)}
+.two{display:grid;grid-template-columns:1fr 1.7fr;gap:26px}
+@media(max-width:860px){.two{grid-template-columns:1fr}header{padding:12px 18px}.hero{padding:30px 18px 72px}}
+h2{font:600 20px Comfortaa,sans-serif;margin:0 0 4px}
+h3{font:600 15px Inter,sans-serif;margin:18px 0 4px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 14px}
+.fld{margin:14px 0}
+.fld label{display:flex;justify-content:space-between;font-weight:500;font-size:14px}
+.fld output{color:var(--blue);font-weight:600}
+.fld small{display:block;color:var(--mute);font-size:12.5px}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.num{width:100px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:500 14px Inter,sans-serif}
+.alert{border-radius:8px;padding:12px 14px;font-size:14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start}
+.alert.bad{background:var(--badbg);color:var(--bad)}
+.alert.ok{background:var(--okbg);color:var(--ok)}
+.alert b{display:block}
+.dot{width:10px;height:10px;border-radius:50%;background:currentColor;margin-top:6px;flex:none;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.dot{animation:none}}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin:4px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.how{background:var(--bar);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--mute);margin:8px 0}
+.chartwrap{position:relative}
+svg{width:100%;height:auto;display:block}
+svg text{fill:var(--mute);font:11px Inter,sans-serif}
+svg rect.b{cursor:pointer;transition:opacity .15s}
+svg rect.b:hover,svg rect.b:focus{opacity:.7}
+.tip{position:absolute;pointer-events:none;background:#0b1b33;color:#fff;font-size:12.5px;line-height:1.45;padding:9px 11px;border-radius:8px;max-width:240px;box-shadow:0 6px 18px rgba(0,0,0,.3);opacity:0;transition:opacity .1s;z-index:5}
+.tip b{display:block;margin-bottom:2px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.cmp>div{border-radius:8px;padding:12px 14px}
+.cmp .r{background:var(--badbg)}.cmp .n{background:var(--okbg)}
+.cmp span{font-size:13px;color:var(--mute)}
+.cmp strong{display:block;font:600 26px Comfortaa,sans-serif}
+.cmp p{margin:2px 0 0;font-size:12.5px;color:var(--mute)}
+.seg{display:flex;gap:8px;margin-bottom:6px}
+.seg button{flex:1;text-align:left;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:10px 12px;font:500 13px/1.35 Inter,sans-serif;cursor:pointer}
+.seg button b{display:block;font-size:14px}
+.seg button[aria-pressed=true]{border-color:var(--blue);background:var(--bar);box-shadow:inset 0 0 0 1px var(--blue)}
+.sentence{background:var(--okbg);color:var(--ok);border-radius:8px;padding:10px 12px;font-weight:500;font-size:14px;margin-top:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px}
+.kpis div{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.kpis span{font-size:12.5px;color:var(--mute)}.kpis b{display:block;font:600 21px Comfortaa,sans-serif}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:11px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--mute);font-size:13px}
+td:first-child{font-weight:600;width:22%}
+td.n{background:var(--okbg)}
+.scroll{overflow-x:auto}
+.flag{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:12px}
+.rates{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:14px;margin-top:10px}
+.rates label{display:flex;gap:8px;align-items:center}
+.verdict{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.verdict .btn{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+.verdict .btn[aria-pressed=true]{background:var(--blue);color:var(--blue-ink)}
+.tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:5px;box-shadow:0 6px 20px rgba(7,26,58,.08)}
+.tabs button{flex:1;border:0;background:transparent;color:var(--mute);padding:12px;border-radius:7px;font:600 15px Inter,sans-serif;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--blue);color:var(--blue-ink)}
+.panel{display:flex;flex-direction:column;gap:20px}.panel[hidden]{display:none}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.steps div{background:var(--bar);border-radius:8px;padding:12px 14px;font-size:14px;color:var(--mute)}.steps b{display:block;color:var(--ink)}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.presets button{border:1px dashed var(--blue);background:transparent;color:var(--ink);border-radius:8px;padding:10px;text-align:left;font:400 12.5px/1.35 Inter,sans-serif;cursor:pointer}.presets b{display:block;font-size:14px;color:var(--blue)}
+details{margin-top:14px;font-size:14px}summary{cursor:pointer;font-weight:500;color:var(--blue)}
+.sentence{font-size:18px!important;line-height:1.4;margin:0 0 12px!important}
+.controls{display:flex;gap:14px;flex-wrap:wrap}.controls label{display:flex;flex-direction:column;font-size:12.5px;color:var(--mute);gap:4px}
+.controls select{border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:170px}
+/* ---------- added: upload and analysis ---------- */
+[hidden]{display:none!important}
+:root{--c-norm:#3ab4f2;--c-lost:#c62f3b;--c-saved:#0f8f7e;--c-spike:#c97f00;--c-band:rgba(198,47,59,.08);--c-l1:#2a78d6;--c-l2:#eb6834;--c-l3:#1baf7a;--c-l4:#6250d6;--c-grow:rgba(250,178,25,.16);--c-off:rgba(81,98,122,.12)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--c-norm:#3a9be0;--c-lost:#e5484d;--c-saved:#1c9a86;--c-spike:#c98500;--c-band:rgba(229,72,77,.13);--c-l1:#3987e5;--c-l2:#d95926;--c-l3:#199e70;--c-l4:#9085e9;--c-grow:rgba(250,178,25,.11);--c-off:rgba(157,176,200,.13)}}
+.hero-cta{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.hero-cta .btn{background:#fff;color:#0b1b33}
+.hero-cta span{color:#cfe3f7;font-size:14px}
+.btn.ghost{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+.linkbtn{background:none;border:0;padding:4px;color:var(--mute);text-decoration:underline;cursor:pointer;font:500 14px Inter,sans-serif}
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;border:2px dashed var(--line);border-radius:10px;padding:30px 16px;cursor:pointer;background:var(--bar);transition:border-color .15s,background .15s;margin-top:6px}
+.drop:hover,.drop.over{border-color:var(--blue)}
+.drop:focus-within{outline:3px solid var(--cyan);outline-offset:2px}
+.drop input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.drop-title{font-weight:600;font-size:16px}
+.drop-title u{color:var(--blue)}
+.drop-sub{color:var(--mute);font-size:13px;max-width:34em}
+.chips{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:6px}
+.chips li{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px}
+.chips .nm{font-weight:600;overflow-wrap:anywhere}
+.chips .ds{color:var(--mute)}
+.chips .er{color:var(--bad)}
+.chips button{margin-left:auto;border:0;background:transparent;color:var(--mute);font-size:20px;line-height:1;cursor:pointer;padding:2px 8px;border-radius:6px}
+.up-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.up-msg{font-size:14px;margin-top:10px}
+.up-msg.er{color:var(--bad)}
+.steps-col{grid-template-columns:1fr;align-content:start}
+.headline{background:var(--badbg);border-left:4px solid var(--bad);color:var(--ink);border-radius:8px;padding:12px 14px;font-size:18px;line-height:1.45;font-weight:500;margin:4px 0 14px}
+.headline.ok{background:var(--okbg);border-left-color:var(--ok)}
+.kpis b.good{color:var(--ok)}
+.kpis b.bad{color:var(--bad)}
+.legend i.ln{height:2px;width:14px;border-radius:1px;vertical-align:middle}
+.ev{border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:16px}
+.ev-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ev-head h3{margin:0;font:600 18px Comfortaa,sans-serif}
+.ev-head .dur{color:var(--mute);font-size:14px}
+.badge{display:inline-block;font:600 12px Inter,sans-serif;padding:3px 9px;border-radius:999px}
+.badge.bad{background:var(--badbg);color:var(--bad)}
+.badge.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;margin:14px 0}
+.facts div{min-width:0}
+.facts dt{font-size:12.5px;color:var(--mute)}
+.facts dd{margin:2px 0 0;font-weight:600;font-size:15px}
+.facts small{display:block;font-weight:400;color:var(--mute);font-size:12.5px}
+.saved{margin:12px 0 0;font-size:15px}
+.clue{background:var(--bar);border-radius:8px;padding:10px 12px;font-size:13.5px;margin-top:12px}
+.clue b{display:block;margin-bottom:2px}
+.ev-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.ev-actions .btn{padding:8px 14px;font-size:13.5px}
+.assume{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:14px;color:var(--mute);background:var(--bar);border-radius:8px;padding:10px 12px;margin:10px 0 4px}
+.assume label{display:flex;gap:6px;align-items:center}
+.assume .num{width:76px}
+.ins{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.ins li{position:relative;padding-left:18px;font-size:14.5px}
+.ins li::before{content:"";position:absolute;left:0;top:8px;width:8px;height:8px;border-radius:50%;background:var(--blue)}
+.ins.muted li::before{background:var(--mute)}
+.ins li.warn::before{background:var(--c-spike)}
+.ins li.bad::before{background:var(--c-lost)}
+table.mini{font-size:13.5px}
+table.mini td:first-child{width:auto}
+table.mini td,table.mini th{padding:8px}
+.tbl{margin-top:10px}
+.tbl .scroll{max-height:320px;overflow:auto;margin-top:8px}
+.meter{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--mute);margin-bottom:8px}
+.src-note{font-size:13px;color:var(--mute);margin:10px 0 0}
+svg .bar{transition:opacity .15s}
+svg .bar.on{opacity:.65}
+svg rect.hit{cursor:pointer}
+svg rect.hit:focus{outline:none}
+svg rect.hit:focus-visible{stroke:var(--cyan);stroke-width:2}
+@media(max-width:600px){.tabs button{font-size:13px;padding:10px 6px}.facts{grid-template-columns:1fr}.cmp{grid-template-columns:1fr}.headline{font-size:16px}main{padding:0 14px}.card{padding:16px}}
+</style>
+</head>
+<body>
+<header><img class="logo" src="data:image/png;base64,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" alt="Nexa by Watts"></header>
+
+<section class="hero">
+  <h1>See what your water costs, and what a change could save</h1>
+  <p>New here? Pick a change, like fixing a leak, and watch what it does to your water bill. Everything shown is an estimate.</p>
+  <div class="hero-cta"><button class="btn" type="button" id="goUpload">Analyze your sensor data</button><span>Upload a Nexa or Monnit CSV export to see when a leak happened and what it cost.</span></div>
+</section>
+
+<main>
+<div class="tabs" role="tablist"><button role="tab" id="t1" aria-selected="true" aria-controls="tab1">Cost simulator</button><button role="tab" id="t2" aria-selected="false" aria-controls="tab2">Live leak detection</button><button role="tab" id="t3" aria-selected="false" aria-controls="tab3">Your data</button></div>
+<div id="tab1" role="tabpanel" class="panel"><section class="card" aria-labelledby="h-scn">
+<h2 id="h-scn">How it works</h2>
+<p class="sub">Three quick steps. Nothing here changes real data.</p>
+<div class="steps"><div><b>1. Pick a time period</b>Which past months should we look at?</div><div><b>2. Imagine a change</b>Use less water, or fix a leak.</div><div><b>3. Compare</b>See usage and cost before and after.</div></div>
+</section>
+<section class="card two">
+<div>
+<h3 style="margin-top:0">Step 1: Pick a time period</h3>
+<div class="controls"><label>Building<select id="bld"><option value="demo">Nexa-enabled building (Duke)</option></select></label><label>Time period<select id="period"><option value="3">Last 3 months</option><option value="6">Last 6 months</option><option value="12" selected>Last 12 months</option></select></label></div>
+<p class="src-note" id="srcNote" hidden></p>
+<h3>Step 2: Imagine a change</h3>
+<p class="sub" style="margin-bottom:8px">Start with an example, or build your own below.</p>
+<div class="presets"><button type="button" data-p="leak"><b>Fix a leak</b>Remove a steady drip</button><button type="button" data-p="upgrade"><b>Efficient fixtures</b>Use 15% less</button><button type="button" data-p="habit"><b>Small habit changes</b>Use 5% less</button></div>
+<div class="seg" role="group" aria-label="Type of change">
+<button type="button" id="mPct" aria-pressed="true"><b>By percent</b>Everything shrinks a bit.</button>
+<button type="button" id="mVol" aria-pressed="false"><b>By fixed amount</b>The same volume disappears each month.</button>
+<button type="button" id="mLeak" aria-pressed="false" hidden><b>Remove the leak</b>Take out the extra water we found.</button></div>
+<div id="pctBox" class="fld"><label for="pct">Use this much less water <output id="pctO"></output></label><input id="pct" type="range" min="-20" max="50" value="10"><small>Example: 10% means every month drops by one tenth. Slide below zero to test an increase.</small></div>
+<div id="volBox" class="fld" hidden><label for="vol">Remove this much each month <output id="volO"></output></label><input id="vol" type="range" min="0" max="150" step="5" value="43"><small id="volH"></small></div>
+<details><summary>Rates used in the estimate</summary>
+<div class="rates"><label>Water $/kgal <input class="num" id="rw" type="number" value="6.42" step="0.01"></label><label>Sewer $/kgal <input class="num" id="rs" type="number" value="8.15" step="0.01"></label><label><input id="incS" type="checkbox" checked> Include sewer</label></div>
+<p class="sub" style="margin-top:8px">kgal means 1,000 gallons. These rates are placeholders and don’t include fixed fees.</p></details>
+</div>
+<div>
+<h3 style="margin-top:0">Step 3: Compare</h3>
+<div class="sentence" id="sentence"></div>
+<div class="kpis" id="kpis"></div>
+<div class="legend"><span><i style="background:var(--cyan)"></i>Before (actual use)</span><span><i style="background:var(--blue)"></i>After (your change)</span></div>
+<div class="how">How to read this: each pair of bars is one month. The light bar is what the building used. The dark bar is what it would use with your change. The gap is water, and money, saved. Hover over a bar for details.</div>
+<div class="chartwrap" id="cw2"><div id="ch2"></div><div class="tip" id="tip2" role="status"></div></div>
+<div class="flag" id="flag"></div>
+<div class="verdict" role="group" aria-label="Decision usefulness"><span class="sub" style="margin:0">Would this help a facilities or budget decision?</span><button class="btn" type="button" aria-pressed="false" data-v="y">Yes</button><button class="btn" type="button" aria-pressed="false" data-v="n">No</button></div>
+</div></section></div>
+<div id="tab2" role="tabpanel" class="panel" hidden><section class="card two" aria-labelledby="h-leak">
+    <div>
+      <h2 id="h-leak">What makes Nexa different: live leak alerts</h2>
+      <p class="sub">Nexa watches water flow all day, so a leak can be flagged within the hour. Regular systems usually find it on the next bill. Start a leak and see the difference.</p>
+      <div class="fld"><label for="gpm">Leak size <output id="gpmO"></output></label><input id="gpm" type="range" min="0.5" max="10" step="0.1" value="2"><small>Gallons lost every minute. A steady 2 gal/min is about a running garden hose’s trickle, 24 hours a day.</small></div>
+      <div class="fld"><label for="start">Leak starts at <output id="startO"></output></label><input id="start" type="range" min="0" max="22" value="21"><small>Water that keeps flowing overnight stands out because normal use drops to near zero.</small></div>
+      <div class="fld"><label for="resp">Crew response after alert <output id="respO"></output></label><input id="resp" type="range" min="1" max="24" value="4"><small>How long staff take to find and stop it once alerted.</small></div>
+      <div class="fld"><label for="days">Days until a regular system notices <output id="daysO"></output></label><input id="days" type="range" min="1" max="60" value="30"><small>Assumption: found on the next monthly bill or when someone reports it. Confirm with Duke.</small></div>
+    </div>
+    <div>
+      <div id="alert"></div>
+      <div class="legend"><span><i style="background:var(--cyan)"></i>Normal flow</span><span><i style="background:var(--bad)"></i>Leak flow</span><span><i style="background:var(--ok)"></i>Nexa alert</span></div>
+      <div class="how">How to read this: each bar is one hour of a day (gallons used). Hover or tab to a bar for details. The leak shows up as bars that never drop back down.</div>
+      <div class="chartwrap" id="cw1"><div id="ch1"></div><div class="tip" id="tip1" role="status"></div></div>
+      <div class="cmp" id="cmp"></div>
+    </div>
+  </section>
+<section class="card" aria-labelledby="h-cmp">
+    <h2 id="h-cmp">Duke’s regular systems vs Nexa</h2>
+    <p class="sub">Regular-system column is a starting assumption to validate with Duke facilities and finance staff.</p>
+    <div class="scroll"><table>
+      <thead><tr><th></th><th>Regular systems (assumed)</th><th>Nexa</th></tr></thead>
+      <tbody>
+        <tr><td>Data rhythm</td><td>Monthly utility bill or periodic meter reads</td><td class="n">Continuous readings, visible within the hour</td></tr>
+        <tr><td>Leak discovery</td><td>On the next bill, or when someone notices</td><td class="n">Live alert when flow doesn’t stop</td></tr>
+        <tr><td>Time to act</td><td>Days to weeks</td><td class="n">Minutes to hours</td></tr>
+        <tr><td>Cost of one leak</td><td id="cR">–</td><td class="n" id="cN">–</td></tr>
+        <tr><td>Budget planning</td><td>Cost known after the fact</td><td class="n">Cost scenarios from real usage and rates</td></tr>
+        <tr><td>Detail</td><td>Whole-building totals</td><td class="n">Usage patterns by hour, so odd flow stands out</td></tr>
+      </tbody>
+    </table></div>
+  </section></div>
+<div id="tab3" role="tabpanel" class="panel" aria-labelledby="t3" hidden>
+<section class="card two" aria-labelledby="h-up">
+  <div>
+    <h2 id="h-up">Find leaks in your building's data</h2>
+    <p class="sub">Upload CSV exports from your Nexa or Monnit sensors. We compare each day with that building's normal use, flag the days that stand out, and price the extra water. Your files stay in this browser. Nothing is uploaded.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".csv,text/csv" multiple aria-describedby="dropSub">
+      <span class="drop-title">Drop CSV files here or <u>browse</u></span>
+      <span class="drop-sub" id="dropSub">A flow meter export finds leaks. Hot water temperature exports add context. Add one or both.</span>
+    </label>
+    <ul class="chips" id="chips" aria-label="Loaded files"></ul>
+    <div class="up-actions"><button class="btn ghost" type="button" id="useSample">Try the Wilkinson sample</button><button class="linkbtn" type="button" id="clearFiles" hidden>Clear files</button></div>
+    <div class="up-msg" id="upMsg" role="status" aria-live="polite"></div>
+  </div>
+  <div class="steps steps-col">
+    <div><b>1. Upload an export</b>Daily totals work. Hourly or 10-minute readings also let us check overnight flow.</div>
+    <div><b>2. See what stood out</b>Leaks, short spikes, hot water shutdowns and readings that can't be right.</div>
+    <div><b>3. See what it cost</b>The extra water in dollars, and what a Nexa alert could have saved.</div>
+  </div>
+</section>
+<div id="results" class="panel" hidden>
+  <section class="card" aria-labelledby="h-sum">
+    <h2 id="h-sum">What we found</h2>
+    <p class="sub" id="sumSub"></p>
+    <div class="meter" id="meterRow" hidden><label for="meterSel">Meter</label><select id="meterSel"></select></div>
+    <div class="headline" id="headline"></div>
+    <div class="kpis" id="upKpis"></div>
+    <div id="dailyBox">
+      <div class="legend" id="dLegend"></div>
+      <div class="how">How to read this: each bar is one day of water use. Red is water above that day's normal level during a leak, amber marks short spikes, and a shaded band spans each leak. Hover or tap a bar for details.</div>
+      <div class="chartwrap" id="cwD"><div id="chD"></div><div class="tip" id="tipD" role="status"></div></div>
+      <details class="tbl" id="dTbl"><summary>Show every day as a table</summary><div class="scroll" id="dTblBody"></div></details>
+    </div>
+  </section>
+  <section class="card" id="rLeaks" aria-labelledby="h-leaks">
+    <h2 id="h-leaks">Leaks and what they cost</h2>
+    <p class="sub">A leak here means at least three days clearly above normal, or two days at double. Change the assumptions and every number updates.</p>
+    <div class="assume" id="assume">
+      <label>Nexa flags it within <input class="num" id="aAlert" type="number" min="1" max="168" step="1" value="24"> hours</label>
+      <label>and a crew stops it <input class="num" id="aCrew" type="number" min="0" max="72" step="1" value="4"> hours later.</label>
+      <label>Water $<input class="num" id="rw3" type="number" step="0.01" value="6.42"></label>
+      <label>Sewer $<input class="num" id="rs3" type="number" step="0.01" value="8.15"> per 1,000 gal</label>
+      <label><input id="incS3" type="checkbox" checked> Include sewer</label>
+      <label id="aRegRow" hidden>Without an alert, someone notices after <input class="num" id="aReg" type="number" min="1" max="365" step="1" value="30"> days</label>
+    </div>
+    <div id="leakList"></div>
+  </section>
+  <section class="card two" id="rMore" aria-labelledby="h-more">
+    <div>
+      <h2 id="h-more">Other things the data shows</h2>
+      <p class="sub">Patterns from the days that looked normal.</p>
+      <ul class="ins" id="moreList"></ul>
+    </div>
+    <div>
+      <h3 style="margin-top:0">Water use and cost by month</h3>
+      <div class="legend" id="mLegend"></div>
+      <div class="chartwrap" id="cwM"><div id="chM"></div><div class="tip" id="tipM" role="status"></div></div>
+      <details class="tbl"><summary>Show as a table</summary><div class="scroll" id="mTbl"></div></details>
+    </div>
+  </section>
+  <section class="card" id="rHot" aria-labelledby="h-hot" hidden>
+    <h2 id="h-hot">Hot water</h2>
+    <p class="sub" id="hotSub"></p>
+    <div class="legend" id="hLegend"></div>
+    <div class="chartwrap" id="cwH"><div id="chH"></div><div class="tip" id="tipH" role="status"></div></div>
+    <details class="tbl"><summary>Show shutdowns as a table</summary><div class="scroll" id="hTbl"></div></details>
+    <ul class="ins" id="hotList" style="margin-top:16px"></ul>
+  </section>
+  <section class="card" aria-labelledby="h-chk">
+    <h2 id="h-chk">Data checks</h2>
+    <p class="sub">What we cleaned up or left out before doing the math.</p>
+    <ul class="ins muted" id="checkList"></ul>
+    <div class="up-actions"><button class="btn ghost" type="button" id="dlCsv">Download daily results (CSV)</button></div>
+    <details><summary>How the leak check works</summary>
+      <p class="sub" style="margin-top:8px">Each day is compared with the same weekday in the four weeks before and after it, so a busy Monday is judged against other Mondays. A day counts as clearly high when it beats that normal level by three times the usual day-to-day swing and by at least 35%. Neighboring days that are moderately high join the run. Leaks found in the first pass are removed and the normal levels are worked out again. With hourly or finer data we also look at the four quietest hours of each night, because water that never stops flowing at night is the classic sign of a leak.</p>
+      <p class="sub">The Nexa estimate assumes the leak starts at the beginning of its first day and that water lost before the fix can't be saved. Readings far above anything the meter could carry are left out. Times are shown as written in the file.</p>
+    </details>
+  </section>
+</div>
+</div>
+</main>
+
+<script id="nexa-engine">
+/* Nexa analysis engine: reads sensor CSV exports, finds leaks, prices them.
+   Pure functions, no DOM, so it runs in the browser and in Node tests. */
+(function (root) {
+  "use strict";
+  var DAY = 864e5, HOUR = 36e5, MIN = 6e4;
+
+  /* ---------- small helpers ---------- */
+  function isNum(x) { return typeof x === "number" && isFinite(x); }
+  function sorted(a) { return a.filter(isNum).sort(function (x, y) { return x - y; }); }
+  function median(a) { var s = sorted(a), m = s.length >> 1; if (!s.length) return NaN; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+  function quantile(a, q) { var s = sorted(a); if (!s.length) return NaN; var p = (s.length - 1) * q, lo = Math.floor(p), hi = Math.ceil(p); return s[lo] + (s[hi] - s[lo]) * (p - lo); }
+  function mad(a, m) { return median(a.map(function (x) { return Math.abs(x - m); })); }
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) if (isNum(a[i])) t += a[i]; return t; }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function dayStart(t) { return Math.floor(t / DAY) * DAY; }
+  function dayKey(t) { var d = new Date(t); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()); }
+  function monthKey(t) { var d = new Date(t); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1); }
+  function isWeekend(dow) { return dow === 0 || dow === 6; }
+  function lower(s) { return String(s || "").toLowerCase(); }
+
+  /* ---------- CSV ---------- */
+  function parseCSV(text) {
+    text = String(text == null ? "" : text).replace(/^﻿/, "");
+    var nl = text.search(/\r?\n/), first = nl < 0 ? text : text.slice(0, nl);
+    var cnt = function (ch) { return first.split(ch).length - 1; };
+    var delim = ",";
+    if (cnt(";") > cnt(",") && cnt(";") >= cnt("\t")) delim = ";";
+    else if (cnt("\t") > cnt(",")) delim = "\t";
+    var rows = [], row = [], f = "", q = false, n = text.length;
+    for (var i = 0; i < n; i++) {
+      var c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; }
+        else f += c;
+      } else if (c === '"') q = true;
+      else if (c === delim) { row.push(f); f = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(f); rows.push(row); row = []; f = "";
+      } else f += c;
+    }
+    if (f !== "" || row.length) { row.push(f); rows.push(row); }
+    rows = rows.filter(function (r) { return r.some(function (x) { return String(x).trim() !== ""; }); });
+    rows.delim = delim;
+    return rows;
+  }
+
+  function parseNum(s, decimalComma) {
+    if (s == null) return NaN;
+    s = String(s).trim();
+    if (!s) return NaN;
+    s = decimalComma ? s.replace(/\.(?=\d{3}\b)/g, "").replace(",", ".") : s.replace(/,(?=\d{3}\b)/g, "");
+    var m = s.match(/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?/i);
+    return m ? parseFloat(m[0]) : NaN;
+  }
+
+  /* Times are read as wall-clock values and kept as UTC-based numbers, so the
+     dates shown match the file no matter where the browser is. */
+  var MON = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+  function mk(y, mo, d, h, mi, s, ap) {
+    h = +(h || 0); mi = +(mi || 0); s = +(s || 0);
+    if (ap) { ap = ap.toLowerCase(); if (ap === "pm" && h < 12) h += 12; if (ap === "am" && h === 12) h = 0; }
+    if (mo < 0 || mo > 11 || d < 1 || d > 31 || h > 23 || mi > 59 || s > 60) return NaN;
+    var t = Date.UTC(y, mo, d, h, mi, s);
+    return new Date(t).getUTCDate() === d ? t : NaN;
+  }
+  function parseTime(str, dayFirst) {
+    var s = String(str == null ? "" : str).trim(), m;
+    if (!s) return NaN;
+    m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s]+(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?\s*(?:Z|[+-]\d{2}:?\d{2})?$/i);
+    if (m) return mk(+m[1], +m[2] - 1, +m[3], m[4], m[5], m[6]);
+    m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})(?:[\sT,]+(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?\s*([AaPp]\.?[Mm]\.?)?)?$/);
+    if (m) {
+      var y = +m[3]; if (y < 100) y += 2000;
+      var a = +m[1], b = +m[2], ap = m[7] ? m[7].replace(/\./g, "") : "";
+      return dayFirst ? mk(y, b - 1, a, m[4], m[5], m[6], ap) : mk(y, a - 1, b, m[4], m[5], m[6], ap);
+    }
+    m = s.match(/^([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})(?:[\s,]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp][Mm])?)?$/);
+    if (m && MON[m[1].toLowerCase()] != null) return mk(+m[3], MON[m[1].toLowerCase()], +m[2], m[4], m[5], m[6], m[7]);
+    if (/^\d{10}(\.\d+)?$/.test(s)) return Math.round(+s * 1000);
+    if (/^\d{13}$/.test(s)) return +s;
+    return NaN;
+  }
+
+  /* ---------- column headers ---------- */
+  // Monnit style: "monnit-1265064 (Wilkinson Flow Meter, FlowVolume, gal)"
+  function parseHeader(h) {
+    var raw = String(h == null ? "" : h).trim(), id = "", name = raw, type = "", unit = "";
+    var m = raw.match(/^(.*?)\s*\((.*)\)\s*$/);
+    if (m) {
+      var parts = m[2].split(",").map(function (x) { return x.trim(); });
+      if (parts.length >= 3) { id = m[1]; unit = parts[parts.length - 1]; type = parts[parts.length - 2]; name = parts.slice(0, -2).join(", "); }
+      else if (parts.length === 2) { id = m[1]; name = parts[0]; unit = parts[1]; }
+      else { name = m[1] || parts[0]; unit = parts[0]; }
+    }
+    var all = lower(raw), u = lower(unit).replace(/[°\s.]/g, ""), ty = lower(type), kind = "other";
+    if (/temp/.test(ty) || /temp/.test(all) || u === "f" || u === "c" || u === "degf" || u === "degc") kind = "temp";
+    else if (/flow|volume|water|usage|consum|gallon|\bgal\b|gpm|meter|liter|litre/.test(all + " " + ty) || /^(gal|gals|kgal|gpm|l|m3|ccf|hcf|cf|ft3)$/.test(u)) kind = "flow";
+    return { raw: raw, id: id || name, name: name || raw, type: type, unit: unit, kind: kind };
+  }
+
+  function flowUnit(unit, type) {
+    var u = lower(unit).replace(/\s+/g, ""), ty = lower(type);
+    var rate = { gpm: [1, 1], "gal/min": [1, 1], gph: [1, 60], "gal/h": [1, 60], "gal/hr": [1, 60], lpm: [0.264172, 1], "l/min": [0.264172, 1], "l/s": [0.264172, 1 / 60] };
+    var vol = { gal: 1, gals: 1, gallon: 1, gallons: 1, kgal: 1000, l: 0.264172, liter: 0.264172, liters: 0.264172, litre: 0.264172, litres: 0.264172, m3: 264.172, "m³": 264.172, cf: 7.48052, ft3: 7.48052, cuft: 7.48052, ccf: 748.052, hcf: 748.052 };
+    if (rate[u]) return { factor: rate[u][0], perMin: rate[u][1], rate: true, known: true };
+    if (vol[u] != null) {
+      if (/rate/.test(ty) && vol[u] === 1) return { factor: 1, perMin: 1, rate: true, known: true };
+      return { factor: vol[u], rate: false, known: true };
+    }
+    return { factor: 1, rate: false, known: false };
+  }
+
+  /* ---------- one file -> sensors ---------- */
+  function readFile(name, text) {
+    var out = { name: name, sensors: [], notes: [], error: null, rows: 0 };
+    var rows = parseCSV(text);
+    if (rows.length < 2) { out.error = "No data rows found."; return out; }
+    var head = rows[0], body = rows.slice(1);
+    out.rows = body.length;
+    var decimalComma = rows.delim === ";";
+    function rate(col, df) {
+      var ok = 0, tried = 0;
+      for (var i = 0; i < body.length && tried < 200; i++) { var v = body[i][col]; if (v == null || String(v).trim() === "") continue; tried++; if (isNum(parseTime(v, df))) ok++; }
+      return tried ? ok / tried : 0;
+    }
+    var tcol = -1, dayFirst = false;
+    for (var j = 0; j < head.length; j++) if (/time|date/i.test(head[j]) && rate(j, false) > 0.8) { tcol = j; break; }
+    if (tcol < 0) for (j = 0; j < head.length; j++) if (rate(j, false) > 0.8) { tcol = j; break; }
+    if (tcol < 0) for (j = 0; j < head.length; j++) if (rate(j, true) > 0.8) { tcol = j; dayFirst = true; break; }
+    if (tcol < 0) { out.error = "Couldn't find a date or time column."; return out; }
+    if (!dayFirst && rate(tcol, false) < 0.98 && rate(tcol, true) > rate(tcol, false)) dayFirst = true;
+    var ts = body.map(function (r) { return parseTime(r[tcol], dayFirst); });
+    var bad = ts.filter(function (t) { return !isNum(t); }).length;
+    if (bad) out.notes.push(bad + " row" + (bad > 1 ? "s" : "") + " had a time we couldn't read and were skipped.");
+    var ignored = [];
+    for (j = 0; j < head.length; j++) {
+      if (j === tcol) continue;
+      var meta = parseHeader(head[j]);
+      if (!meta.raw) continue;
+      var pts = [];
+      for (var i = 0; i < body.length; i++) {
+        var v = parseNum(body[i][j], decimalComma);
+        if (isNum(ts[i]) && isNum(v)) pts.push({ t: ts[i], v: v });
+      }
+      if (meta.kind === "other") { if (pts.length) ignored.push(meta.name); continue; }
+      meta.points = pts; meta.file = name;
+      out.sensors.push(meta);
+    }
+    if (ignored.length) out.notes.push("Ignored " + ignored.length + " column" + (ignored.length > 1 ? "s" : "") + " that aren't flow or temperature: " + ignored.join(", ") + ".");
+    if (!out.sensors.length) out.error = "No flow or temperature columns found.";
+    return out;
+  }
+
+  function cleanPoints(pts) {
+    var s = pts.slice().sort(function (a, b) { return a.t - b.t; }), out = [];
+    for (var i = 0; i < s.length; i++) if (!out.length || out[out.length - 1].t !== s[i].t) out.push(s[i]);
+    return out;
+  }
+  function stepOf(pts) {
+    var d = [];
+    for (var i = 1; i < pts.length; i++) if (pts[i].t > pts[i - 1].t) d.push(pts[i].t - pts[i - 1].t);
+    return median(d);
+  }
+
+  /* Same sensor in several files: keep the finest resolution, merge the rest. */
+  function mergeSensors(files) {
+    var by = {}, order = [], notes = [];
+    files.forEach(function (f) {
+      (f.sensors || []).forEach(function (s) {
+        var key = s.kind + "|" + lower(s.id) + "|" + lower(s.name);
+        if (!by[key]) { by[key] = []; order.push(key); }
+        by[key].push(s);
+      });
+    });
+    var flows = [], temps = [];
+    order.forEach(function (key) {
+      var list = by[key], s = list[0];
+      if (list.length > 1) {
+        var withPts = list.filter(function (x) { return x.points.length > 1; });
+        if (withPts.length > 1) {
+          var steps = withPts.map(function (x) { return stepOf(cleanPoints(x.points)); });
+          var min = Math.min.apply(null, steps);
+          var fine = withPts.filter(function (x, i) { return steps[i] <= min * 1.25; });
+          if (fine.length < withPts.length) notes.push(s.name + " appears in more than one file at different time steps. We used the most detailed file (" + fine[0].file + ").");
+          var pts = [];
+          fine.forEach(function (x) { pts = pts.concat(x.points); });
+          var dupes = pts.length - cleanPoints(pts).length;
+          if (dupes > 0 && fine.length > 1) notes.push(s.name + " appears in more than one file. Repeated readings were counted once.");
+          s = Object.assign({}, fine[0], { points: pts, file: fine.map(function (x) { return x.file; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(", ") });
+        } else s = withPts[0] || list[0];
+      }
+      s = Object.assign({}, s, { points: cleanPoints(s.points) });
+      (s.kind === "flow" ? flows : temps).push(s);
+    });
+    return { flows: flows, temps: temps, notes: notes };
+  }
+
+  /* ---------- flow ---------- */
+  function looksCumulative(vals) {
+    if (vals.length < 10) return false;
+    var up = 0, down = 0, n = vals.length - 1;
+    for (var i = 1; i < vals.length; i++) { var d = vals[i] - vals[i - 1]; if (d > 0) up++; else if (d < 0) down++; }
+    return down / n <= 0.02 && up / n >= 0.6;
+  }
+
+  function buildDays(pts, step, sub) {
+    var map = {}, first = dayStart(pts[0].t), last = dayStart(pts[pts.length - 1].t);
+    pts.forEach(function (p) { var k = dayStart(p.t); var d = map[k] || (map[k] = { total: 0, n: 0 }); d.total += p.v; d.n++; });
+    var perDay = sub ? DAY / step : 1, days = [];
+    for (var t = first; t <= last; t += DAY) {
+      var d = map[t], dow = new Date(t).getUTCDay();
+      days.push(d ? { t: t, key: dayKey(t), dow: dow, total: d.total, n: d.n, cov: Math.min(1, d.n / perDay), status: "ok" }
+                  : { t: t, key: dayKey(t), dow: dow, total: null, n: 0, cov: 0, status: "missing" });
+    }
+    return days;
+  }
+
+  function classifyDays(days) {
+    var pos = days.filter(function (d) { return d.total > 0; }).map(function (d) { return d.total; });
+    var medPos = median(pos), q = { glitches: [], offline: [], missing: 0, partial: 0, medPos: medPos };
+    days.forEach(function (d) {
+      if (d.status === "missing") { q.missing++; return; }
+      if (d.total < 0) { d.status = "glitch"; d.why = "a negative reading"; }
+      else if (isNum(medPos) && medPos > 0 && d.total > 50 * medPos) { d.status = "glitch"; d.why = "far more than this meter could carry"; }
+      else if (d.cov < 0.75) { d.status = "partial"; q.partial++; }
+      if (d.status === "glitch") q.glitches.push({ t: d.t, total: d.total, times: medPos > 0 ? d.total / medPos : null });
+    });
+    var firstIdx = -1;
+    for (var k = 0; k < days.length; k++) if (days[k].status !== "missing") { firstIdx = k; break; }
+    var i = 0;
+    while (i < days.length) {
+      if (days[i].status === "ok" && days[i].total === 0) {
+        var j = i;
+        while (j + 1 < days.length && days[j + 1].status === "ok" && days[j + 1].total === 0) j++;
+        var len = j - i + 1;
+        if (len >= 2 || medPos >= 50) {
+          for (var x = i; x <= j; x++) days[x].status = "offline";
+          q.offline.push({ start: days[i].t, end: days[j].t, days: len, atStart: i === firstIdx, atEnd: j === days.length - 1 });
+        }
+        i = j + 1;
+      } else i++;
+    }
+    return q;
+  }
+
+  function computeBaselines(days, exclude) {
+    var usable = days.filter(function (d) { return d.status === "ok" && !exclude[d.t]; });
+    var overall = median(usable.map(function (d) { return d.total; }));
+    days.forEach(function (d) {
+      d.base = null; d.sigma = null; d.excess = 0; d.z = null; d.ratio = null; d.basis = null;
+      if (d.status !== "ok") return;
+      var pool = usable.filter(function (o) { return o.t !== d.t && Math.abs(o.t - d.t) <= 28 * DAY; });
+      var same = pool.filter(function (o) { return o.dow === d.dow; }), basis = "dow";
+      if (same.length < 3) { same = pool.filter(function (o) { return isWeekend(o.dow) === isWeekend(d.dow); }); basis = isWeekend(d.dow) ? "weekend" : "weekday"; }
+      if (same.length < 4) { same = pool; basis = "all"; }
+      if (same.length < 3) return;
+      var vals = same.map(function (o) { return o.total; }), b = median(vals), m = mad(vals, b);
+      d.base = b;
+      d.sigma = Math.max(1.4826 * m, 0.15 * b, 0.02 * (overall || 0), 1);
+      d.excess = d.total - b; d.z = d.excess / d.sigma; d.ratio = b > 0 ? d.total / b : null; d.basis = basis;
+    });
+  }
+
+  function markFlags(days) {
+    days.forEach(function (d) {
+      d.flag = null;
+      if (d.status !== "ok") return;
+      if (d.base != null) {
+        if (d.excess >= 3 * d.sigma && d.excess >= 0.35 * d.base) d.flag = "strong";
+        else if (d.excess >= 2 * d.sigma && d.excess >= 0.2 * d.base) d.flag = "shoulder";
+      }
+      if (d.night && d.night.strong) d.flag = "strong";
+    });
+  }
+
+  function findRuns(days) {
+    var n = days.length, on = [], i, j;
+    for (i = 0; i < n; i++) on.push(false);
+    var hit = function (d) { return d.flag === "strong" || d.flag === "shoulder"; };
+    for (i = 0; i < n; i++) if (days[i].flag === "strong") {
+      on[i] = true;
+      for (j = i - 1; j >= 0 && hit(days[j]); j--) on[j] = true;
+      for (j = i + 1; j < n && hit(days[j]); j++) on[j] = true;
+    }
+    var runs = [];
+    i = 0;
+    while (i < n) {
+      if (!on[i]) { i++; continue; }
+      var s = i, e = i;
+      for (;;) {
+        if (e + 1 < n && on[e + 1]) { e++; continue; }
+        if (e + 2 < n && on[e + 2] && days[e + 1].status !== "ok") { e += 2; continue; }
+        break;
+      }
+      runs.push({ s: s, e: e });
+      i = e + 1;
+    }
+    return runs;
+  }
+
+  /* Overnight check for hourly or finer data: real leaks keep water moving
+     in the hours when a building is normally quiet. */
+  function nightCheck(pts, days) {
+    var hours = {};
+    pts.forEach(function (p) { var h = Math.floor(p.t / HOUR) * HOUR; hours[h] = (hours[h] || 0) + p.v; });
+    var okDay = {};
+    days.forEach(function (d) { if (d.status === "ok") okDay[d.t] = true; });
+    var byHod = [];
+    for (var k = 0; k < 24; k++) byHod.push([]);
+    Object.keys(hours).forEach(function (h) { h = +h; if (okDay[dayStart(h)]) byHod[new Date(h).getUTCHours()].push(hours[h]); });
+    var hodMed = byHod.map(function (a) { return a.length ? median(a) : Infinity; });
+    var start = 0, best = Infinity;
+    for (var s = 0; s < 24; s++) { var sm = 0; for (k = 0; k < 4; k++) sm += hodMed[(s + k) % 24]; if (sm < best) { best = sm; start = s; } }
+    var active = Object.keys(hours).map(function (h) { return hours[h]; }).filter(function (v) { return v > 0; });
+    var floor = Math.max(0.05 * (median(active) || 0), 0.1);
+    var nights = [];
+    days.forEach(function (d) {
+      d.night = null;
+      if (d.status !== "ok") return;
+      var vals = [];
+      for (var k2 = 0; k2 < 4; k2++) { var v = hours[d.t + (start + k2) * HOUR]; if (isNum(v)) vals.push(v); }
+      if (vals.length < 3) return;
+      d.night = { mean: sum(vals) / vals.length, min: Math.min.apply(null, vals), strong: false };
+      nights.push(d.night);
+    });
+    if (nights.length < 5) return null;
+    var quiet = nights.filter(function (x) { return x.min <= floor; }).length / nights.length;
+    var applies = quiet >= 0.6;
+    var typ = median(nights.map(function (x) { return x.mean; })), m = mad(nights.map(function (x) { return x.mean; }), typ);
+    var thr = Math.max(typ + 3 * 1.4826 * m, 3 * typ, 2 * floor);
+    if (applies) nights.forEach(function (x) { x.strong = x.min > floor && x.mean > thr; });
+    var runs = [];
+    if (applies) {
+      var keys = Object.keys(hours).map(Number).sort(function (a, b) { return a - b; });
+      var rs = null, prev = null;
+      keys.forEach(function (h) {
+        var flowing = hours[h] > floor;
+        if (flowing && rs !== null && prev !== null && h - prev === HOUR) { prev = h; return; }
+        if (rs !== null && prev - rs + HOUR >= 24 * HOUR) runs.push({ start: rs, end: prev + HOUR, hours: (prev - rs) / HOUR + 1 });
+        rs = flowing ? h : null; prev = flowing ? h : null;
+      });
+      if (rs !== null && prev - rs + HOUR >= 24 * HOUR) runs.push({ start: rs, end: prev + HOUR, hours: (prev - rs) / HOUR + 1 });
+      runs.forEach(function (r) {
+        days.forEach(function (d) {
+          if (d.status === "ok" && d.t >= dayStart(r.start) && d.t <= dayStart(r.end - 1) && d.night) d.night.strong = true;
+        });
+      });
+    }
+    return { quietStart: start, floor: floor, typical: typ, applies: applies, runs: runs };
+  }
+
+  function analyzeFlow(s) {
+    var notes = [], pts = cleanPoints(s.points);
+    var res = { sensor: { name: s.name, id: s.id, unit: s.unit, file: s.file }, notes: notes, error: null };
+    if (pts.length < 3) { res.error = "Too few readings to analyze."; return res; }
+    var step = stepOf(pts);
+    var u = flowUnit(s.unit, s.type);
+    if (!u.known) notes.push("The file has no flow unit, so each reading was treated as gallons used since the last reading.");
+    var vals = pts.map(function (p) { return p.v * u.factor; });
+    if (u.rate) {
+      vals = vals.map(function (v, i) {
+        var dt = i + 1 < pts.length ? Math.min(pts[i + 1].t - pts[i].t, 3 * step) : step;
+        return v * (dt / MIN) / u.perMin;
+      });
+      notes.push("Flow was recorded as a rate, so it was converted to gallons per reading.");
+    }
+    if (looksCumulative(vals)) {
+      var d = [];
+      for (var i = 1; i < vals.length; i++) d.push(Math.max(0, vals[i] - vals[i - 1]));
+      vals = d; pts = pts.slice(1);
+      notes.push("Readings only ever went up, so they were treated as a running meter total and converted to use per reading.");
+    }
+    pts = pts.map(function (p, i) { return { t: p.t, v: vals[i] }; });
+    res.stepMin = step / MIN;
+    res.resolution = step <= 70 * MIN ? "subdaily" : step <= 36 * HOUR ? "daily" : "coarse";
+    res.firstT = pts[0].t; res.lastT = pts[pts.length - 1].t;
+
+    var days = buildDays(pts, step, res.resolution === "subdaily");
+    res.days = days;
+    res.quality = classifyDays(days);
+    if (res.resolution === "coarse") {
+      notes.push("Readings are " + Math.round(step / DAY) + " days apart. Leak checks need daily or finer data, so only totals are shown.");
+      res.events = []; res.leaks = []; res.spikes = [];
+      res.monthly = monthly(days, []); res.patterns = null; res.night = null;
+      return res;
+    }
+
+    computeBaselines(days, {});
+    res.night = res.resolution === "subdaily" ? nightCheck(pts, days) : null;
+    markFlags(days);
+    var runs = findRuns(days), excl = {};
+    runs.forEach(function (r) { for (var k = r.s; k <= r.e; k++) excl[days[k].t] = true; });
+    computeBaselines(days, excl);
+    markFlags(days);
+    runs = findRuns(days);
+
+    var normal = days.filter(function (d) { return d.status === "ok"; });
+    var inRun = {};
+    runs.forEach(function (r) { for (var k = r.s; k <= r.e; k++) inRun[k] = true; });
+    var normalDays = days.filter(function (d, k) { return d.status === "ok" && !inRun[k]; });
+    var typical = median(normalDays.map(function (d) { return d.total; }));
+    var lastOk = -1;
+    for (var k2 = days.length - 1; k2 >= 0; k2--) if (days[k2].status === "ok") { lastOk = k2; break; }
+
+    var events = runs.map(function (r) {
+      var list = days.slice(r.s, r.e + 1), ok = list.filter(function (d) { return d.status === "ok"; });
+      ok.forEach(function (d) { d.extra = Math.max(0, d.excess); });
+      var excess = sum(ok.map(function (d) { return d.extra; }));
+      var peak = null;
+      ok.forEach(function (d) { if (!peak || d.extra > peak.extra) peak = d; });
+      var n = r.e - r.s + 1;
+      var ratios = ok.map(function (d) { return d.ratio; }).filter(isNum);
+      var minRatio = ratios.length ? Math.min.apply(null, ratios) : 0;
+      var midRatio = ratios.length ? median(ratios) : 0, topRatio = ratios.length ? Math.max.apply(null, ratios) : 0;
+      var big = excess >= 0.5 * (typical || 0);
+      var type = (n >= 3 || (n === 2 && minRatio >= 2)) && big ? "leak" : "spike";
+      // likely: several days and clearly above normal; possible: shorter or milder
+      var confidence = type === "leak" ? (n >= 3 && (midRatio >= 1.8 || topRatio >= 3 || n >= 7) ? "likely" : "possible") : null;
+      var ev = {
+        type: type, confidence: confidence, notable: type === "spike" && topRatio >= 2 && big,
+        startT: days[r.s].t, endT: days[r.e].t, days: n, excess: excess, midRatio: midRatio,
+        avgPerDay: excess / n, gpm: excess / (n * 1440),
+        peak: peak ? { t: peak.t, total: peak.total, base: peak.base, ratio: peak.ratio, dow: peak.dow } : null,
+        ongoing: lastOk >= 0 && r.e >= lastOk, first: r.s, last: r.e, normalDays: typical > 0 ? excess / typical : null
+      };
+      if (res.night && res.night.runs.length) {
+        var best = null;
+        res.night.runs.forEach(function (run) {
+          var a = Math.max(run.start, ev.startT), b = Math.min(run.end, ev.endT + DAY);
+          if (b > a && (!best || run.hours > best.hours)) best = run;
+        });
+        ev.nonstop = best;
+      }
+      list.forEach(function (d) { d.event = ev; });
+      return ev;
+    });
+    res.events = events;
+    res.leaks = events.filter(function (e) { return e.type === "leak"; });
+    res.likely = res.leaks.filter(function (e) { return e.confidence === "likely"; });
+    res.possible = res.leaks.filter(function (e) { return e.confidence === "possible"; });
+    res.spikes = events.filter(function (e) { return e.type === "spike" && e.notable; });
+
+    var dowMed = [];
+    for (var w = 0; w < 7; w++) dowMed.push(median(normalDays.filter(function (d) { return d.dow === w; }).map(function (d) { return d.total; })));
+    res.patterns = {
+      typical: typical,
+      weekday: median(normalDays.filter(function (d) { return !isWeekend(d.dow); }).map(function (d) { return d.total; })),
+      weekend: median(normalDays.filter(function (d) { return isWeekend(d.dow); }).map(function (d) { return d.total; })),
+      dow: dowMed, okDays: normal.length, normalDays: normalDays.length
+    };
+    res.monthly = monthly(days, events);
+    return res;
+  }
+
+  function monthly(days, events) {
+    var by = {}, order = [];
+    days.forEach(function (d) {
+      var k = monthKey(d.t);
+      if (!by[k]) {
+        var dt = new Date(d.t), dim = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate();
+        by[k] = { key: k, t: Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), 1), gal: 0, leak: 0, possible: 0, covered: 0, daysInMonth: dim };
+        order.push(k);
+      }
+      var m = by[k], ev = d.event;
+      if (d.status === "ok" || d.status === "partial") { m.gal += d.total; m.covered += d.status === "ok" ? 1 : d.cov; }
+      if (ev && ev.type === "leak" && d.status === "ok") m[ev.confidence === "likely" ? "leak" : "possible"] += d.extra || 0;
+    });
+    return order.map(function (k) { var m = by[k]; m.coverage = m.covered / m.daysInMonth; m.full = m.coverage >= 0.9; return m; });
+  }
+
+  /* ---------- temperature ---------- */
+  var OFF_BELOW = 100, ON_AT = 110, GROW_LO = 77, GROW_HI = 113;
+  function analyzeTemps(list) {
+    var out = { sensors: [], hot: [], main: null, loop: null, sparse: [] };
+    list.forEach(function (s) {
+      var c = /^(c|degc|°c|celsius)$/i.test(String(s.unit || "").replace(/\s/g, ""));
+      var pts = cleanPoints(s.points).map(function (p) { return { t: p.t, v: c ? p.v * 9 / 5 + 32 : p.v }; });
+      if (pts.length < 5) { out.sparse.push({ name: s.name, n: pts.length }); return; }
+      var vals = pts.map(function (p) { return p.v; }), step = stepOf(pts);
+      var info = { name: s.name, id: s.id, file: s.file, pts: pts, n: pts.length, step: step, min: Math.min.apply(null, vals), max: Math.max.apply(null, vals), median: median(vals), p90: quantile(vals, 0.9) };
+      info.hot = info.p90 >= 105;
+      if (info.hot) {
+        var st = vals[0] >= 105 ? "on" : "off", trans = [], periods = [], cur = st === "off" ? { start: pts[0].t, atStart: true, lo: vals[0], hi: vals[0] } : null;
+        for (var i = 1; i < pts.length; i++) {
+          var v = vals[i];
+          if (st === "on" && v < OFF_BELOW) { st = "off"; trans.push({ t: pts[i].t, to: "off" }); cur = { start: pts[i].t, lo: v, hi: v }; }
+          else if (st === "off" && v >= ON_AT) { st = "on"; trans.push({ t: pts[i].t, to: "on" }); cur.end = pts[i].t; periods.push(cur); cur = null; }
+          else if (st === "off") { cur.lo = Math.min(cur.lo, v); cur.hi = Math.max(cur.hi, v); }
+        }
+        if (cur) { cur.end = null; cur.ongoing = true; periods.push(cur); }
+        var lastT = pts[pts.length - 1].t;
+        periods.forEach(function (p) { p.days = ((p.end || lastT) - p.start) / DAY; });
+        info.transitions = trans; info.cold = periods; info.state = st;
+        info.onLevel = median(vals.filter(function (v) { return v >= ON_AT; }));
+        var grow = 0;
+        for (i = 0; i < pts.length; i++) {
+          var dt = i + 1 < pts.length ? Math.min(pts[i + 1].t - pts[i].t, 3 * step) : step;
+          if (vals[i] >= GROW_LO && vals[i] <= GROW_HI) grow += dt;
+        }
+        info.growDays = grow / DAY;
+        out.hot.push(info);
+      }
+      out.sensors.push(info);
+    });
+    var pick = function (re, not) { return out.hot.filter(function (h) { return re.test(h.name) && !(not && not.test(h.name)); })[0]; };
+    out.main = pick(/mix/i) || pick(/supply|deliver/i, /return/i) || pick(/outlet|heater|boiler|hx|exchang/i, /return/i) || out.hot.filter(function (h) { return !/return/i.test(h.name); })[0] || out.hot[0] || null;
+    var sup = pick(/mix|supply|deliver/i, /return/i), ret = pick(/return/i);
+    if (sup && ret) {
+      var map = {};
+      ret.pts.forEach(function (p) { map[Math.round(p.t / MIN)] = p.v; });
+      var pairs = [];
+      sup.pts.forEach(function (p) { var r = map[Math.round(p.t / MIN)]; if (isNum(r) && p.v >= ON_AT && r >= OFF_BELOW) pairs.push([p.v, r]); });
+      if (pairs.length >= 10) out.loop = { supply: sup.name, ret: ret.name, out: median(pairs.map(function (x) { return x[0]; })), back: median(pairs.map(function (x) { return x[1]; })), drop: median(pairs.map(function (x) { return x[0] - x[1]; })), n: pairs.length };
+    }
+    return out;
+  }
+
+  /* Did the hot water system switch on or off when a leak started or ended? */
+  function hotWaterClue(ev, temps, flow) {
+    var m = temps && temps.main;
+    if (!m || !m.transitions) return null;
+    var s = ev.startT, e = ev.endT + DAY;
+    if (m.pts[0].t > s + DAY || m.pts[m.pts.length - 1].t < e - DAY) return null;
+    var tol = Math.max(1.6 * DAY, 1.5 * m.step);
+    var near = function (to, t) { return m.transitions.filter(function (tr) { return tr.to === to && Math.abs(tr.t - t) <= tol; })[0]; };
+    var on = near("on", s), off = near("off", e);
+    if (!on && !off) return null;
+    var clue = { sensor: m.name, onT: on ? on.t : null, offT: off ? off.t : null, backT: null, backNormal: false };
+    if (off) {
+      var back = m.transitions.filter(function (tr) { return tr.to === "on" && tr.t > off.t; })[0];
+      if (back && back.t < e + 45 * DAY) {
+        clue.backT = back.t;
+        var after = flow.days.filter(function (d) { return d.t >= dayStart(back.t) && d.t < dayStart(back.t) + 4 * DAY && d.status === "ok"; });
+        clue.backNormal = after.length >= 2 && after.every(function (d) { return !d.event; });
+      }
+    }
+    return clue;
+  }
+
+  /* Was any hot water sensor running unusually hot or cold during the leaks? */
+  function eventContrast(temps, leaks) {
+    var best = null;
+    temps.hot.forEach(function (h) {
+      var inside = [], outside = [];
+      h.pts.forEach(function (p) {
+        if (p.v < ON_AT) return;
+        var hit = leaks.some(function (ev) { return p.t >= ev.startT && p.t < ev.endT + DAY; });
+        (hit ? inside : outside).push(p.v);
+      });
+      if (inside.length < 3 || outside.length < 10) return;
+      var a = median(inside), b = median(outside), diff = a - b;
+      if (Math.abs(diff) >= 5 && (!best || Math.abs(diff) > Math.abs(best.diff))) best = { name: h.name, during: a, other: b, diff: diff, n: inside.length };
+    });
+    return best;
+  }
+
+  function analyze(files) {
+    var merged = mergeSensors(files);
+    var flows = merged.flows.map(analyzeFlow);
+    var temps = merged.temps.length ? analyzeTemps(merged.temps) : null;
+    flows.forEach(function (f) { (f.events || []).forEach(function (ev) { if (ev.type === "leak") ev.clue = hotWaterClue(ev, temps, f); }); });
+    if (temps && flows[0] && flows[0].leaks && flows[0].leaks.length) temps.contrast = eventContrast(temps, flows[0].leaks);
+    var notes = merged.notes.slice();
+    files.forEach(function (f) { (f.notes || []).forEach(function (n) { notes.push(f.name + ": " + n); }); });
+    return { flows: flows, temps: temps, notes: notes, files: files.map(function (f) { return { name: f.name, rows: f.rows, error: f.error, sensors: (f.sensors || []).length }; }) };
+  }
+
+  /* ---------- money ---------- */
+  // opt: { rate: $ per 1,000 gal, alertHours, crewHours, regularDays }
+  function price(flow, opt) {
+    var r = opt.rate, stopH = opt.alertHours + opt.crewHours;
+    (flow.events || []).forEach(function (ev) {
+      ev.cost = ev.excess / 1000 * r;
+      var remain = stopH, lost = 0;
+      flow.days.slice(ev.first, ev.last + 1).forEach(function (d) {
+        var x = d.status === "ok" ? d.extra || 0 : 0, h = Math.min(24, Math.max(0, remain));
+        d.lostPart = x * h / 24; d.savedPart = x - d.lostPart; lost += d.lostPart; remain -= 24;
+      });
+      ev.nexaGal = Math.min(lost, ev.excess); ev.nexaCost = ev.nexaGal / 1000 * r;
+      ev.savedGal = ev.excess - ev.nexaGal; ev.savedCost = ev.savedGal / 1000 * r;
+      ev.alertT = ev.startT + opt.alertHours * HOUR; ev.fixT = ev.startT + stopH * HOUR;
+      ev.projectedGal = ev.ongoing ? ev.excess + ev.avgPerDay * Math.max(0, opt.regularDays - ev.days) : null;
+    });
+    var leaks = flow.likely || [];
+    return {
+      leakGal: sum(leaks.map(function (e) { return e.excess; })),
+      leakCost: sum(leaks.map(function (e) { return e.cost; })),
+      savedGal: sum(leaks.map(function (e) { return e.savedGal; })),
+      savedCost: sum(leaks.map(function (e) { return e.savedCost; })),
+      nexaCost: sum(leaks.map(function (e) { return e.nexaCost; }))
+    };
+  }
+
+  /* Monthly totals for the cost simulator (full months only, last 12). */
+  function simSeries(flow) {
+    var ms = (flow.monthly || []).filter(function (m) { return m.full; }).slice(-12);
+    return {
+      months: ms.map(function (m) { return new Date(m.t).toLocaleString("en-US", { month: "short", timeZone: "UTC" }); }),
+      years: ms.map(function (m) { return new Date(m.t).getUTCFullYear(); }),
+      use: ms.map(function (m) { return m.gal / 1000; }),
+      leak: ms.map(function (m) { return m.leak / 1000; })
+    };
+  }
+
+  function dailyCSV(flow) {
+    var lines = ["date,gallons,normal_gallons,extra_gallons,status"];
+    flow.days.forEach(function (d) {
+      var ev = d.event, st = d.status;
+      if (st === "ok") st = !ev ? "normal" : ev.type === "leak" ? (ev.confidence === "likely" ? "likely leak" : "possible leak") : ev.notable ? "spike" : "normal";
+      lines.push([d.key, d.total == null ? "" : Math.round(d.total), d.base == null ? "" : Math.round(d.base), d.event && d.status === "ok" ? Math.round(d.extra || 0) : "", st].join(","));
+    });
+    return lines.join("\n");
+  }
+
+  var api = { parseCSV: parseCSV, parseTime: parseTime, parseHeader: parseHeader, readFile: readFile, analyze: analyze, price: price, simSeries: simSeries, dailyCSV: dailyCSV, median: median, DAY: DAY, HOUR: HOUR };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  root.NexaEngine = api;
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script type="text/plain" id="sample-flow" data-name="wilkinson-flow-daily.csv">
+"timestamp","monnit-1265064 (Wilkinson Flow Meter, FlowVolume, gal)"
+"03/30/26 05:00:00 AM","0"
+"03/31/26 05:00:00 AM","0"
+"04/01/26 05:00:00 AM","0"
+"04/02/26 05:00:00 AM","0"
+"04/03/26 05:00:00 AM","332764.7636199999"
+"04/04/26 05:00:00 AM","533706.2257819999"
+"04/05/26 05:00:00 AM","633787.4179719997"
+"04/06/26 05:00:00 AM","2562727.6466783145"
+"04/07/26 05:00:00 AM","1731.8084976151206"
+"04/08/26 05:00:00 AM","1598.6991223454397"
+"04/09/26 05:00:00 AM","1811.2700445358803"
+"04/10/26 05:00:00 AM","4851.1895940310005"
+"04/11/26 05:00:00 AM","2626.5134889941605"
+"04/12/26 05:00:00 AM","2127.0472325947208"
+"04/13/26 05:00:00 AM","5150.093691255761"
+"04/14/26 05:00:00 AM","3037.6301363491207"
+"04/15/26 05:00:00 AM","2973.4896892975203"
+"04/16/26 05:00:00 AM","2721.4823708100002"
+"04/17/26 05:00:00 AM","4641.099376844"
+"04/18/26 05:00:00 AM","2178.763014679601"
+"04/19/26 05:00:00 AM","2101.77252289148"
+"04/20/26 05:00:00 AM","4618.01073690296"
+"04/21/26 05:00:00 AM","2648.4635115054807"
+"04/22/26 05:00:00 AM","2078.9115376156"
+"04/23/26 05:00:00 AM","2375.8665255102005"
+"04/24/26 05:00:00 AM","3975.6768641406015"
+"04/25/26 05:00:00 AM","1655.8074392463602"
+"04/26/26 05:00:00 AM","1951.1104814678001"
+"04/27/26 05:00:00 AM","3868.7264484018015"
+"04/28/26 05:00:00 AM","2350.9864057564405"
+"04/29/26 05:00:00 AM","1788.97075654576"
+"04/30/26 05:00:00 AM","1894.1631827598806"
+"05/01/26 05:00:00 AM","3624.258499165121"
+"05/02/26 05:00:00 AM","1113.6983214960003"
+"05/03/26 05:00:00 AM","527.0242901054002"
+"05/04/26 05:00:00 AM","3245.956102816201"
+"05/05/26 05:00:00 AM","1300.5206131191205"
+"05/06/26 05:00:00 AM","1477.30473511008"
+"05/07/26 05:00:00 AM","1013.9440986725202"
+"05/08/26 05:00:00 AM","1368.68427832024"
+"05/09/26 05:00:00 AM","592.9562169697201"
+"05/10/26 05:00:00 AM","431.12026100384014"
+"05/11/26 05:00:00 AM","2784.7179442403203"
+"05/12/26 05:00:00 AM","1458.3546629369603"
+"05/13/26 05:00:00 AM","1096.3362589916"
+"05/14/26 05:00:00 AM","1468.5629844770403"
+"05/15/26 05:00:00 AM","2806.012059797"
+"05/16/26 05:00:00 AM","770.3810230571203"
+"05/17/26 05:00:00 AM","762.20401428148"
+"05/18/26 05:00:00 AM","3247.109943104121"
+"05/19/26 05:00:00 AM","1277.5170491320403"
+"05/20/26 05:00:00 AM","1493.1789147059603"
+"05/21/26 05:00:00 AM","1157.4373483256402"
+"05/22/26 05:00:00 AM","1255.1115452384402"
+"05/23/26 05:00:00 AM","336.10892723700005"
+"05/24/26 05:00:00 AM","457.9709741412001"
+"05/25/26 05:00:00 AM","2809.46444694584"
+"05/26/26 05:00:00 AM","1613.1887624166004"
+"05/27/26 05:00:00 AM","1669.68057974224"
+"05/28/26 05:00:00 AM","1606.1048745480402"
+"05/29/26 05:00:00 AM","3655.6547203584"
+"05/30/26 05:00:00 AM","941.7238970858002"
+"05/31/26 05:00:00 AM","963.3368324048802"
+"06/01/26 05:00:00 AM","4143.464179688601"
+"06/02/26 05:00:00 AM","2305.9962843983603"
+"06/03/26 05:00:00 AM","1882.5945062162405"
+"06/04/26 05:00:00 AM","1657.2374752937203"
+"06/05/26 05:00:00 AM","3908.679217513961"
+"06/06/26 05:00:00 AM","1280.18295684964"
+"06/07/26 05:00:00 AM","1341.5998213744401"
+"06/08/26 05:00:00 AM","4881.768890076641"
+"06/09/26 05:00:00 AM","1418.7572484468803"
+"06/10/26 05:00:00 AM","1719.28893477168"
+"06/11/26 05:00:00 AM","1829.6521582280002"
+"06/12/26 05:00:00 AM","2971.8135591032005"
+"06/13/26 05:00:00 AM","1003.5111670389201"
+"06/14/26 05:00:00 AM","783.7046445538002"
+"06/15/26 05:00:00 AM","1360.30684397224"
+"06/16/26 05:00:00 AM","1110.8683510137603"
+"06/17/26 05:00:00 AM","1157.9929564681202"
+"06/18/26 05:00:00 AM","969.8801629372003"
+"06/19/26 05:00:00 AM","1104.4950003374001"
+"06/20/26 05:00:00 AM","262.20041716940005"
+"06/21/26 05:00:00 AM","433.4825718172401"
+"06/22/26 05:00:00 AM","1818.9398142113603"
+"06/23/26 05:00:00 AM","1179.0988247390003"
+"06/24/26 05:00:00 AM","1242.2919462183204"
+"06/25/26 05:00:00 AM","1600.4692901566802"
+"06/26/26 05:00:00 AM","1391.1200558782803"
+"06/27/26 05:00:00 AM","253.27346382220003"
+"06/28/26 05:00:00 AM","412.0578837839601"
+"06/29/26 05:00:00 AM","1096.4546531816402"
+"06/30/26 05:00:00 AM","960.3155700652002"
+"07/01/26 05:00:00 AM","1359.1712711141604"
+"07/02/26 05:00:00 AM","1344.3780341388003"
+"07/03/26 05:00:00 AM","866.8345711578802"
+"07/04/26 05:00:00 AM","581.4847946666"
+"07/05/26 05:00:00 AM","427.42195176000007"
+"07/06/26 05:00:00 AM","1572.9870266378"
+"07/07/26 05:00:00 AM","1741.52124218572"
+"07/08/26 05:00:00 AM","1448.6989049677204"
+"07/09/26 05:00:00 AM","1134.0085766207203"
+"07/10/26 05:00:00 AM","1452.0783944491604"
+"07/11/26 05:00:00 AM","441.06439301908006"
+"07/12/26 05:00:00 AM","546.34476770684"
+"07/13/26 05:00:00 AM","1807.5169330025203"
+"07/14/26 05:00:00 AM","1533.8936346242801"
+"07/15/26 05:00:00 AM","1116.73463464192"
+"07/16/26 05:00:00 AM","1279.6606669432401"
+"07/17/26 05:00:00 AM","1158.8157987070801"
+"07/18/26 05:00:00 AM","701.2942168048804"
+"07/19/26 05:00:00 AM","732.4808787108801"
+"07/20/26 05:00:00 AM","1442.9571046728797"
+"07/21/26 05:00:00 AM","1357.3251610638804"
+"07/22/26 05:00:00 AM","1169.14860358048"
+"07/23/26 05:00:00 AM","1171.6323531555602"
+"07/24/26 05:00:00 AM","1456.1562428362404"
+"07/25/26 05:00:00 AM","655.57850744836"
+"07/26/26 05:00:00 AM","371.1760565293601"
+"07/27/26 05:00:00 AM","1493.46119960868"
+"07/28/26 05:00:00 AM","1283.8660432352806"
+"07/29/26 05:00:00 AM","1588.60615042376"
+"07/30/26 05:00:00 AM","1143.7644613501602"
+"07/31/26 05:00:00 AM","1334.2395656944802"
+"08/01/26 05:00:00 AM","580.3886291878802"
+"08/02/26 05:00:00 AM","732.27740856688"
+"08/03/26 05:00:00 AM","1884.2188786926804"
+"08/04/26 05:00:00 AM","1280.6049479438802"
+"08/05/26 05:00:00 AM","1335.5725195532802"
+"08/06/26 05:00:00 AM","1796.54953317596"
+"08/07/26 05:00:00 AM","1876.3759125376403"
+"08/08/26 05:00:00 AM","325.4573026012"
+"08/09/26 05:00:00 AM","572.61856070024"
+"08/10/26 05:00:00 AM","1393.3457050718"
+"08/11/26 05:00:00 AM","1243.7585171253604"
+"08/12/26 05:00:00 AM","1732.3392330286003"
+"08/13/26 05:00:00 AM","1319.8258678623602"
+"08/14/26 05:00:00 AM","1573.5487239235606"
+"08/15/26 05:00:00 AM","525.55467462672"
+"08/16/26 05:00:00 AM","834.6276860122"
+"08/17/26 05:00:00 AM","2052.63165547892"
+"08/18/26 05:00:00 AM","1757.71728611564"
+"08/19/26 05:00:00 AM","1690.0819999642003"
+"08/20/26 05:00:00 AM","1487.4704326472001"
+"08/21/26 05:00:00 AM","1838.6306972411203"
+"08/22/26 05:00:00 AM","404.2695478664801"
+"08/23/26 05:00:00 AM","2919.20812625524"
+"08/24/26 05:00:00 AM","2362.7916986282007"
+"08/25/26 05:00:00 AM","2007.1679573606802"
+"08/26/26 05:00:00 AM","2486.12031643944"
+"08/27/26 05:00:00 AM","2808.5230384648803"
+"08/28/26 05:00:00 AM","2840.7815092764804"
+"08/29/26 05:00:00 AM","721.1794362637199"
+"08/30/26 05:00:00 AM","2738.9080252149206"
+"08/31/26 05:00:00 AM","2114.7347006228006"
+"09/01/26 05:00:00 AM","1610.4680524094802"
+"09/02/26 05:00:00 AM","1975.7292842164004"
+"09/03/26 05:00:00 AM","1777.1592024787603"
+"09/04/26 05:00:00 AM","1846.6497323954002"
+"09/05/26 05:00:00 AM","671.0063393768801"
+"09/06/26 05:00:00 AM","479.19523660212013"
+"09/07/26 05:00:00 AM","955.8399151050402"
+"09/08/26 05:00:00 AM","1731.7531791697204"
+"09/09/26 05:00:00 AM","2136.22924175184"
+"09/10/26 05:00:00 AM","1558.6310036148802"
+"09/11/26 05:00:00 AM","2082.33956819132"
+"09/12/26 05:00:00 AM","677.4464985773602"
+"09/13/26 05:00:00 AM","824.2948811388001"
+"09/14/26 05:00:00 AM","2351.6208286576402"
+"09/15/26 05:00:00 AM","1600.3234948218803"
+"09/16/26 05:00:00 AM","1773.2665568058405"
+"09/17/26 05:00:00 AM","1682.1417795686405"
+"09/18/26 05:00:00 AM","1751.89040986684"
+"09/19/26 05:00:00 AM","637.71546703904"
+"09/20/26 05:00:00 AM","667.3049855613999"
+"09/21/26 05:00:00 AM","2061.10312744384"
+"09/22/26 05:00:00 AM","1908.4461360634402"
+"09/23/26 05:00:00 AM","2084.4468231948003"
+"09/24/26 05:00:00 AM","1871.2717517676006"
+"09/25/26 05:00:00 AM","1702.3488633615204"
+"09/26/26 05:00:00 AM","694.7933382235601"
+"09/27/26 05:00:00 AM","469.56687977764"
+"09/28/26 05:00:00 AM","1833.71478375688"
+"09/29/26 05:00:00 AM","2370.3158450208402"
+"09/30/26 05:00:00 AM","1618.12277127872"
+"10/01/26 05:00:00 AM","2373.9503903122"
+"10/02/26 05:00:00 AM","1950.6700508917604"
+"10/03/26 05:00:00 AM","1146.1905361160402"
+"10/04/26 05:00:00 AM","976.5085694234801"
+"10/05/26 05:00:00 AM","2361.8990032934803"
+"10/06/26 05:00:00 AM","2785.2431066664"
+"10/07/26 05:00:00 AM","3910.0970752747603"
+"10/08/26 05:00:00 AM","5181.00398535036"
+"10/09/26 05:00:00 AM","6465.850844445961"
+"10/10/26 05:00:00 AM","6412.404473981161"
+"10/11/26 05:00:00 AM","6628.209090318241"
+"10/12/26 05:00:00 AM","6743.49127183044"
+"10/13/26 05:00:00 AM","9215.22460337468"
+"10/14/26 05:00:00 AM","5542.108037855602"
+"10/15/26 05:00:00 AM","2706.8619862102805"
+"10/16/26 05:00:00 AM","1730.5355749293203"
+"10/17/26 05:00:00 AM","723.1652525055202"
+"10/18/26 05:00:00 AM","657.8011120702402"
+"10/19/26 05:00:00 AM","2263.37456299696"
+"10/20/26 05:00:00 AM","2070.98958464988"
+"10/21/26 05:00:00 AM","2145.8423757181204"
+"10/22/26 05:00:00 AM","1840.7804041956003"
+"10/23/26 05:00:00 AM","1813.5623302015604"
+"10/24/26 05:00:00 AM","1095.2947237504402"
+"10/25/26 05:00:00 AM","1328.2335758748002"
+"10/26/26 05:00:00 AM","2007.47155426488"
+"10/27/26 05:00:00 AM","2075.1251078461605"
+"10/28/26 05:00:00 AM","1781.7349841991204"
+"10/29/26 05:00:00 AM","1998.9939931566807"
+"10/30/26 05:00:00 AM","1844.5485665352003"
+"10/31/26 05:00:00 AM","757.27896708232"
+"11/01/26 05:00:00 AM","912.2952247044801"
+"11/02/26 05:00:00 AM","1905.7680500592805"
+"11/03/26 05:00:00 AM","2039.8120564588005"
+"11/04/26 05:00:00 AM","1984.77767632528"
+"11/05/26 05:00:00 AM","1281.24258746868"
+</script>
+<script type="text/plain" id="sample-temp" data-name="wilkinson-hot-water-temps.csv">
+"timestamp","monnit-1307348 (Mixing Valve Outlet Temperature, Temperature, f)","monnit-1307356 (Spare Temperature 2, Temperature, f)","monnit-1307357 (DHW Return Temperature, Temperature, f)","monnit-1307376 (Plate HX Outlet, Temperature, f)","monnit-1307511 (Spare Temperature 3, Temperature, f)","monnit-1308061 (Spare Temperature 1, Temperature, f)"
+"03/29/26 09:17:15 PM","73.85200000000002","74.345","73.677","73.558","75.9875","74.08250000000001"
+"03/31/26 05:16:15 AM","73.82281250000001","","73.65312499999999","73.49656249999997","",""
+"04/01/26 01:15:15 PM","83.9675","","84.15968750000002","83.55218749999999","",""
+"04/02/26 09:14:15 PM","103.0994642857143","","97.78598214285715","109.51625","",""
+"04/04/26 05:13:15 AM","119.7940625","","109.5696875","133.925","",""
+"04/05/26 01:12:15 PM","119.69843749999998","","109.115","133.86031249999996","",""
+"04/06/26 09:11:15 PM","119.58687499999999","","108.40062499999999","133.7046875","",""
+"04/08/26 05:10:15 AM","119.60843750000004","","108.15218750000003","133.851875","",""
+"04/09/26 01:09:15 PM","119.57683035714287","","108.05187500000001","133.74875","",""
+"04/10/26 09:08:15 PM","119.7265089285714","","108.87593749999999","133.59874999999997","",""
+"04/12/26 05:07:15 AM","119.78824999999999","","109.23031249999998","133.76000000000002","",""
+"04/13/26 01:06:15 PM","119.86156249999999","","109.535","133.91468749999999","",""
+"04/14/26 09:05:15 PM","119.21693750000001","","108.588125","133.72718749999999","",""
+"04/16/26 05:04:15 AM","119.37406250000002","","108.62883928571429","134.2240625","",""
+"04/17/26 01:03:15 PM","119.35343749999998","","108.72125000000003","133.95218749999998","",""
+"04/18/26 09:02:15 PM","119.6478125","","109.08687499999999","134.10875","",""
+"04/20/26 05:01:15 AM","119.88499999999999","","109.5040625","134.133125","",""
+"04/21/26 01:00:15 PM","119.9058064516129","","109.55870967741936","133.97870967741932","",""
+"04/22/26 08:59:15 PM","119.89437499999997","","109.70337500000002","134.009375","",""
+"04/24/26 04:58:15 AM","119.853125","","109.73656250000002","133.74406249999998","",""
+"04/25/26 12:57:15 PM","119.8240625","","109.6690625","133.52562500000002","",""
+"04/26/26 08:56:15 PM","119.8915625","","109.59312499999999","133.45906250000002","",""
+"04/28/26 04:55:15 AM","119.85875000000001","","109.5209375","133.4665625","",""
+"04/29/26 12:54:15 PM","119.88218749999999","","109.60249999999999","133.43656249999998","",""
+"04/30/26 08:53:15 PM","119.83531249999999","","109.4815625","133.41660714285715","",""
+"05/02/26 04:52:15 AM","119.79874999999998","","109.40281250000001","133.53218750000002","",""
+"05/03/26 12:51:15 PM","119.31406249999999","","108.42593749999999","133.20593749999998","",""
+"05/04/26 08:50:15 PM","119.2578125","","108.26937499999998","133.23406250000002","",""
+"05/06/26 04:49:15 AM","119.42281249999999","","108.66031249999999","133.37375","",""
+"05/07/26 12:48:15 PM","119.13125000000002","","108.2073660714286","133.18504464285715","",""
+"05/08/26 08:47:15 PM","119.42093749999995","","108.66124999999998","133.1759375","",""
+"05/10/26 04:46:15 AM","119.64031249999996","","109.13749999999999","133.214375","",""
+"05/11/26 12:45:15 PM","119.1378125","","108.43531250000001","133.08031250000002","",""
+"05/12/26 08:44:15 PM","119.28406249999999","","108.635","133.308125","",""
+"05/14/26 04:43:15 AM","119.37406250000002","","108.79437499999999","133.28","",""
+"05/15/26 12:42:15 PM","119.36937500000003","","108.6190625","133.50593750000002","",""
+"05/16/26 08:41:15 PM","119.64125","","109.1215625","133.4785625","",""
+"05/18/26 04:40:15 AM","119.47718750000001","","109.229375","133.27625","",""
+"05/19/26 12:39:15 PM","119.32906249999999","","109.229375","133.0896875","",""
+"05/20/26 08:38:15 PM","119.44437500000001","","109.48343750000002","133.15343749999997","",""
+"05/22/26 04:37:15 AM","119.6384375","","109.55147321428575","133.25937499999998","",""
+"05/23/26 12:36:15 PM","119.74250000000002","","109.57531250000001","133.27624999999998","",""
+"05/24/26 08:35:15 PM","119.736875","","109.77312500000001","133.2846875","",""
+"05/26/26 04:34:15 AM","119.60187499999998","","109.715","133.390625","",""
+"05/27/26 12:33:15 PM","119.46875000000001","","109.7028125","133.38406249999997","",""
+"05/28/26 08:32:15 PM","119.56062500000002","","109.60812499999999","133.24718750000002","",""
+"05/30/26 04:31:15 AM","119.87843750000002","","110.0853125","133.01093749999998","",""
+"05/31/26 12:30:15 PM","119.66843750000001","","109.73656249999999","132.7896875","",""
+"06/01/26 08:29:15 PM","119.48187500000003","","109.34187499999999","133.22375","",""
+"06/03/26 04:28:15 AM","119.54374999999999","","109.34375","133.17125000000001","",""
+"06/04/26 12:27:15 PM","119.43218749999997","","109.15919642857145","133.24316964285714","",""
+"06/05/26 08:26:15 PM","119.71906249999999","","109.656875","133.1590625","",""
+"06/07/26 04:25:15 AM","119.78535714285715","","109.85160714285715","133.10870535714287","",""
+"06/08/26 12:24:15 PM","119.46218750000001","","109.44218750000002","133.17406250000002","",""
+"06/09/26 08:23:15 PM","119.52995535714287","","109.69785714285715","133.09732142857143","",""
+"06/11/26 04:22:15 AM","119.64500000000004","","110.0496875","132.82919642857146","",""
+"06/12/26 12:21:15 PM","119.71089285714285","","110.06656249999999","132.978125","",""
+"06/13/26 08:20:15 PM","119.763125","","110.24281249999999","132.79062499999998","",""
+"06/15/26 04:19:15 AM","119.62343750000005","","109.895","132.74749999999997","",""
+"06/16/26 12:18:15 PM","119.48093750000001","","109.57906249999999","132.73531250000002","",""
+"06/17/26 08:17:15 PM","119.5813839285714","","109.75718750000001","132.764375","",""
+"06/19/26 04:16:15 AM","119.781875","","110.0215625","132.666875","",""
+"06/20/26 12:15:15 PM","119.79125000000002","","109.949375","132.77281250000001","",""
+"06/21/26 08:14:15 PM","119.5353125","","109.75437500000001","132.90125","",""
+"06/23/26 04:13:15 AM","119.63656250000001","","109.96531250000001","133.05687499999996","",""
+"06/24/26 12:12:15 PM","119.3946875","","109.52","133.037375","",""
+"06/25/26 08:11:15 PM","119.57924107142858","","109.81772321428572","133.09213169642857","",""
+"06/27/26 04:10:15 AM","119.8175","","110.28406249999999","132.68562500000002","",""
+"06/28/26 12:09:15 PM","119.69937500000002","","110.10312499999998","132.68","",""
+"06/29/26 08:08:15 PM","119.56812500000001","","109.8096875","132.64249999999998","",""
+"07/01/26 04:07:15 AM","119.61593749999999","","110.08531249999999","132.64249999999998","",""
+"07/02/26 12:06:15 PM","119.67781250000002","","110.35062500000001","132.633125","",""
+"07/03/26 08:05:15 PM","119.87187500000002","","110.856875","132.666875","",""
+"07/05/26 04:04:15 AM","119.90281250000001","","110.96281249999998","132.68","",""
+"07/06/26 12:03:15 PM","119.63375000000002","","110.59156250000001","132.815","",""
+"07/07/26 08:02:15 PM","119.61968750000001","","110.5775","132.85062499999998","",""
+"07/09/26 04:01:15 AM","119.76781250000002","","110.75656249999997","132.77374999999998","",""
+"07/10/26 12:00:15 PM","119.75387096774196","","110.76258064516131","132.8067741935484","",""
+"07/11/26 07:59:15 PM","119.84187499999997","","110.95718750000002","132.760625","",""
+"07/13/26 03:58:15 AM","119.62999999999998","","110.56906250000003","132.7296875","",""
+"07/14/26 11:57:15 AM","119.59249999999999","","110.4115625","132.66875","",""
+"07/15/26 07:56:15 PM","119.66883928571428","","110.49406250000001","132.7034375","",""
+"07/17/26 03:55:15 AM","119.75750000000002","","110.800625","132.71937499999999","",""
+"07/18/26 11:54:15 AM","119.76218749999998","","111.02","132.7775","",""
+"07/19/26 07:53:15 PM","119.6225","","110.9046875","132.850625","",""
+"07/21/26 03:52:15 AM","119.60616071428572","","110.86611607142856","132.89790178571428","",""
+"07/22/26 11:51:15 AM","119.55031249999999","","110.72187500000003","132.87968750000002","",""
+"07/23/26 07:50:15 PM","119.53116071428573","","110.39482142857145","132.8225","",""
+"07/25/26 03:49:15 AM","119.699375","","110.40687499999999","132.695","",""
+"07/26/26 11:48:15 AM","119.52781249999998","","110.00642857142856","132.6978125","",""
+"07/27/26 07:47:15 PM","119.47906250000001","","109.91937500000002","132.6125","",""
+"07/29/26 03:46:15 AM","119.57750000000001","","110.020625","132.569375","",""
+"07/30/26 11:45:15 AM","119.47625","","109.89794642857143","132.59281249999998","",""
+"07/31/26 07:44:15 PM","119.63","","110.13968750000001","132.6134375","",""
+"08/02/26 03:43:15 AM","119.6534375","","110.27562499999998","132.75218750000002","",""
+"08/03/26 11:42:15 AM","114.625625","","106.56500000000001","124.72531249999997","",""
+"08/04/26 07:41:15 PM","92.0965625","","88.80125000000001","95.09468749999999","",""
+"08/06/26 03:40:15 AM","102.2121875","","97.5771875","105.37611607142857","",""
+"08/07/26 11:39:15 AM","91.3334375","","90.18312499999999","90.9546875","",""
+"08/08/26 07:38:15 PM","90.4428125","","89.7415625","90.14750000000001","",""
+"08/10/26 03:37:15 AM","92.83437499999998","","91.41500000000002","92.46125","",""
+"08/11/26 11:36:15 AM","93.53468750000002","","91.7215625","93.02","",""
+"08/12/26 07:35:15 PM","92.763125","","91.25843749999999","92.35142857142858","",""
+"08/14/26 03:34:15 AM","93.7746875","","92.0796875","93.303125","",""
+"08/15/26 11:33:15 AM","94.5790625","","92.68062499999999","94.0615625","",""
+"08/16/26 07:32:15 PM","92.97500000000002","","91.60531249999998","92.5821875","",""
+"08/18/26 03:31:15 AM","93.1690625","","91.75625000000001","92.76125","",""
+"08/19/26 11:30:15 AM","93.93500000000002","","92.255","93.54205357142858","",""
+"08/20/26 07:29:15 PM","87.20281250000002","","87.69312499999998","86.99281250000003","",""
+"08/22/26 03:28:15 AM","90.10249999999999","","89.2775","89.72937499999998","",""
+"08/23/26 11:27:15 AM","86.64593749999999","","86.64687500000001","86.55593750000003","",""
+"08/24/26 07:26:15 PM","114.47093750000002","","106.00156249999999","131.21281249999998","",""
+"08/26/26 03:25:15 AM","118.33156250000003","","108.914375","138.90031250000004","",""
+"08/27/26 11:24:15 AM","118.58187500000003","","108.93968749999999","139.66062499999998","",""
+"08/28/26 07:23:15 PM","89.48000000000002","","88.514375","89.8784375","",""
+"08/30/26 03:22:15 AM","104.67781250000002","","97.74875","111.3790625","",""
+"08/31/26 11:21:15 AM","118.7534375","","109.22937499999999","129.38281249999997","",""
+"09/01/26 07:20:15 PM","118.81625000000001","","109.578125","129.2309375","",""
+"09/03/26 03:19:15 AM","119.05531249999999","","110.1303125","129.43410714285713","",""
+"09/04/26 11:18:15 AM","115.87812499999998","","108.2159375","123.19437500000002","",""
+"09/05/26 07:17:15 PM","95.47812499999999","","93.87031250000001","95.07312499999998","",""
+"09/07/26 03:16:15 AM","93.08749999999999","","91.99437499999998","92.71906250000002","",""
+"09/08/26 11:15:15 AM","91.07937499999998","","90.48218750000001","90.8834375","",""
+"09/09/26 07:14:15 PM","88.10187499999998","","88.55375000000001","88.01749999999997","",""
+"09/11/26 03:13:15 AM","85.139375","","86.69843749999998","85.1853125","",""
+"09/12/26 11:12:15 AM","85.360625","","86.99843750000001","85.42812500000002","",""
+"09/13/26 07:11:15 PM","85.06062499999999","","86.73687499999997","85.15906250000002","",""
+"09/15/26 03:10:15 AM","85.07750000000001","","86.69468750000001","85.16468749999999","",""
+"09/16/26 11:09:15 AM","84.9125","","86.63374999999998","85.00156249999999","",""
+"09/17/26 07:08:15 PM","84.97718749999999","","86.85312499999999","85.07374999999999","",""
+"09/19/26 03:07:15 AM","85.360625","","87.20375000000004","85.42531249999998","",""
+"09/20/26 11:06:15 AM","84.993125","","86.89906250000001","85.0728125","",""
+"09/21/26 07:05:15 PM","85.01749999999997","","86.85031249999996","85.06531249999999","",""
+"09/23/26 03:04:15 AM","84.54687500000001","","86.33656249999999","84.6246875","",""
+"09/24/26 11:03:15 AM","83.08330357142857","","84.90285714285714","83.15133928571429","",""
+"09/25/26 07:02:15 PM","83.16781250000001","","84.72218749999998","83.18187499999998","",""
+"09/27/26 03:01:15 AM","82.97093750000002","","84.47656249999997","82.9775","",""
+"09/28/26 11:00:15 AM","81.52806451612904","","83.42483870967742","81.61322580645161","",""
+"09/29/26 06:59:15 PM","81.69218750000002","","83.9375","81.8525","",""
+"10/01/26 02:58:15 AM","82.37187500000002","","84.59562499999998","82.51625","",""
+"10/02/26 10:57:15 AM","83.14437499999998","","85.4","83.29250000000002","",""
+"10/03/26 06:56:15 PM","83.25392857142857","","85.22107142857143","83.34325892857143","",""
+"10/05/26 02:55:15 AM","84.28156249999999","","85.72343749999999","84.30312500000001","",""
+"10/06/26 10:54:15 AM","112.24812500000002","","104.58124999999998","120.33312499999998","",""
+"10/07/26 06:53:15 PM","91.51249999999999","","90.27968750000001","93.5675","",""
+"10/09/26 02:52:15 AM","117.90968750000002","","108.17562500000001","137.31687499999998","",""
+"10/10/26 10:51:15 AM","117.1930625","","107.11953125000002","139.79787499999995","",""
+"10/11/26 06:50:15 PM","117.50281249999999","","107.6928125","139.88562499999998","",""
+"10/13/26 02:49:15 AM","117.53937499999999","","107.8315625","139.8978125","",""
+"10/14/26 10:48:15 AM","117.201875","","107.66187500000001","133.1965625","",""
+"10/15/26 06:47:15 PM","82.93906249999999","","85.52468750000001","83.11906249999998","",""
+"10/17/26 02:46:15 AM","82.07750000000001","","84.4671875","82.2396875","",""
+"10/18/26 10:45:15 AM","85.95875000000001","","86.5671875","86.4415625","",""
+"10/19/26 06:44:15 PM","118.76281250000002","","109.049375","123.0715625","",""
+"10/21/26 02:43:15 AM","118.6878125","","108.95937500000001","122.95624999999998","",""
+"10/22/26 10:42:15 AM","118.76374999999999","","108.97343749999999","122.98625000000001","",""
+"10/23/26 06:41:15 PM","118.72437500000001","","109.19375000000002","123.21218750000001","",""
+"10/25/26 02:40:15 AM","118.64093749999995","","109.146875","123.16343750000003","",""
+"10/26/26 10:39:15 AM","118.67281249999999","","108.8075","123.23066964285715","",""
+"10/27/26 06:38:15 PM","118.68406250000001","","109.0175","123.0471875","",""
+"10/29/26 02:37:15 AM","118.77433035714284","","109.2789285714286","123.30285714285714","",""
+"10/30/26 10:36:15 AM","118.88093750000002","","109.47781249999998","123.36781250000004","",""
+"10/31/26 06:35:15 PM","118.870625","","109.59031250000001","123.40437500000002","",""
+"11/02/26 02:34:15 AM","118.78343749999999","","109.14593750000003","123.22785714285715","",""
+"11/03/26 10:33:15 AM","118.74781250000001","","108.90124999999999","123.06781250000003","",""
+"11/04/26 06:32:15 PM","118.8125","","108.94571428571427","123.1014285714286","",""
+</script>
+<script>
+var $=function(i){return document.getElementById(i)};
+var E=window.NexaEngine,DAY=864e5,HOUR=36e5;
+
+/* ---------- simulator data: demo building, or the uploaded meter ---------- */
+var DEMO={key:"demo",label:"Nexa-enabled building (Duke)",months:["Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"],use:[412,398,376,401,365,388,452,498,531,547,512,468],leak:null};
+var SIM={demo:DEMO,up:null,cur:DEMO};
+var hrly=[60,40,30,30,40,120,420,860,980,940,900,880,920,880,860,840,780,700,560,420,300,200,120,80];
+var mode="pct";
+var money=function(n){return (n<0?"-":"")+"$"+Math.abs(Math.round(n)).toLocaleString("en-US")};
+var num=function(n){return Math.round(n).toLocaleString("en-US")};
+var fk=function(n){return Math.abs(n)<10?(Math.round(n*10)/10).toLocaleString("en-US"):num(n)};
+var hr=function(h){h=h%24;return (h%12||12)+(h<12?" AM":" PM")};
+var esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
+var sumA=function(a){return a.reduce(function(x,y){return x+y},0)};
+function rate(){return (+$("rw").value||0)+($("incS").checked?(+$("rs").value||0):0)}
+function tipper(wrap,tip,e,html){var r=wrap.getBoundingClientRect(),t=e.target.getBoundingClientRect();tip.innerHTML=html;tip.style.opacity=1;var x=t.left-r.left+t.width/2-tip.offsetWidth/2;x=Math.max(0,Math.min(x,r.width-tip.offsetWidth));tip.style.left=x+"px";tip.style.top=Math.max(0,t.top-r.top-tip.offsetHeight-8)+"px"}
+function bind(wrap,tip){wrap.querySelectorAll("rect.b").forEach(function(b){var f=function(e){tipper(wrap,tip,e,b.getAttribute("data-t"))};b.addEventListener("mouseenter",f);b.addEventListener("focus",f);b.addEventListener("mouseleave",function(){tip.style.opacity=0});b.addEventListener("blur",function(){tip.style.opacity=0})})}
+function axes(W,H,pl,pb,mx,fmt){var s="";for(var g=0;g<=4;g++){var y=(H-pb)-(H-pb-10)*g/4;s+="<line x1='"+pl+"' x2='"+W+"' y1='"+y+"' y2='"+y+"' stroke='var(--line)'/><text x='0' y='"+(y+4)+"'>"+fmt(mx*g/4)+"</text>"}return s}
+
+function leak(){
+  var g=+$("gpm").value,st=+$("start").value,rp=+$("resp").value,dy=+$("days").value,r=rate();
+  $("gpmO").textContent=g+" gal/min";$("startO").textContent=hr(st);$("respO").textContent=rp+" hours";$("daysO").textContent=dy+" days";
+  var det=st+1,galH=g*60;
+  var nGal=g*60*(1+rp),rGal=g*60*24*dy;
+  var al=det<24?hr(det):"the next morning";
+  $("alert").innerHTML="<div class='alert bad'><span class='dot'></span><div><b>Nexa alert at "+al+": water has flowed nonstop for 1 hour</b>Flow of about "+g+" gal/min ("+num(galH)+" gal/hour) isn’t returning to normal. Possible leak.</div></div>";
+  var W=680,H=230,pl=40,pb=24,bw=(W-pl)/24,mx=Math.max(1200,Math.ceil((Math.max.apply(null,hrly)+galH)/200)*200),s="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Hourly water use for one day with a leak'>"+axes(W,H,pl,pb,mx,num);
+  for(var h=0;h<24;h++){var lk=h>=st,tot=hrly[h]+(lk?galH:0),hh=(H-pb-10)*Math.min(tot,mx)/mx,hn=(H-pb-10)*hrly[h]/mx,x=pl+h*bw+bw*.12,w=bw*.76;
+    var t="<b>"+hr(h)+"</b>"+num(tot)+" gallons this hour. "+(lk?"Normal for this hour is "+num(hrly[h])+", so "+num(galH)+" extra gallons are leaking."+(h===det?" <b>Nexa alert fires here.</b>":""):"Normal use for this hour of the day.");
+    s+="<rect class='b' tabindex='0' x='"+x+"' y='"+(H-pb-hh)+"' width='"+w+"' height='"+hh+"' rx='2' fill='"+(lk?"var(--bad)":"var(--cyan)")+"' data-t=\""+t+"\"/>";
+    if(lk)s+="<rect x='"+x+"' y='"+(H-pb-hn)+"' width='"+w+"' height='"+hn+"' rx='2' fill='var(--cyan)' pointer-events='none'/>";
+    if(h%3==0)s+="<text x='"+(x+w/2)+"' y='"+(H-6)+"' text-anchor='middle'>"+hr(h)+"</text>"}
+  if(det<24){var ax=pl+det*bw+bw/2;s+="<line x1='"+ax+"' x2='"+ax+"' y1='6' y2='"+(H-pb)+"' stroke='var(--ok)' stroke-width='2' stroke-dasharray='4 3'/><text x='"+(ax+4)+"' y='14' style='fill:var(--ok);font-weight:600'>Alert</text>"}
+  $("ch1").innerHTML=s+"</svg>";bind($("cw1"),$("tip1"));
+  var rc=rGal/1000*r,nc=nGal/1000*r;
+  $("cmp").innerHTML="<div class='r'><span>Regular systems</span><strong>"+money(rc)+"</strong><p>"+num(rGal)+" gal lost over "+dy+" days before anyone knows</p></div><div class='n'><span>With Nexa</span><strong>"+money(nc)+"</strong><p>"+num(nGal)+" gal lost: 1 hour to alert + "+rp+" hours to respond</p></div>";
+  $("cR").textContent=money(rc)+" lost ("+num(rGal)+" gal) over "+dy+" days";$("cN").textContent=money(nc)+" lost ("+num(nGal)+" gal) over "+(rp+1)+" hours";
+}
+
+function scen(){
+  var src=SIM.cur,n=Math.min(+$("period").value||12,src.use.length),d=src.use.slice(-n),m=src.months.slice(-n),lk=src.leak?src.leak.slice(-n):[],r=rate(),p=+$("pct").value/100,v=+$("vol").value;
+  $("pctO").textContent=$("pct").value+"%";$("volO").textContent=fk(v)+" kgal";
+  $("volH").textContent=fk(v)+" kgal a month is the same as a leak of about "+(v/43.2).toFixed(1)+" gal/min running nonstop.";
+  var sc=d.map(function(x,i){return Math.max(0,mode==="pct"?x*(1-p):mode==="leak"?x-(lk[i]||0):x-v)});
+  var bu=sumA(d),su=sumA(sc),bc=bu*r,scst=su*r,df=bc-scst;
+  var per=(bu-su)/n;
+  $("sentence").textContent=mode==="leak"?"Without the leak we found, these "+n+" months would have used "+fk(bu-su)+" kgal less and cost about "+money(df)+" less.":"Using "+fk(Math.abs(per))+" kgal "+(per>=0?"less":"more")+" per month would "+(df>=0?"save":"add")+" about "+money(Math.abs(df/n))+" a month, or "+money(Math.abs(df))+" over these "+n+" months.";
+  $("kpis").innerHTML="<div><span>Baseline cost</span><b>"+money(bc)+"</b></div><div><span>Scenario cost</span><b>"+money(scst)+"</b></div><div><span>"+(df>=0?"Estimated savings":"Estimated added cost")+"</span><b style='color:var(--"+(df>=0?"ok":"bad")+")'>"+money(Math.abs(df))+"</b></div>";
+  var W=680,H=230,pl=40,pb=24,bw=(W-pl)/n,mx=Math.max.apply(null,d)*1.1||1,pk=d.indexOf(Math.max.apply(null,d));
+  var s="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Monthly usage, baseline and scenario'>"+axes(W,H,pl,pb,mx,fk);
+  d.forEach(function(x,i){var h1=(H-pb-10)*x/mx,h2=(H-pb-10)*sc[i]/mx,w=Math.min(bw*.36,28),bx=pl+i*bw+bw/2-w-1;
+    var t="<b>"+m[i]+(i===pk?" (highest month)":"")+"</b>Baseline: "+fk(x)+" kgal, "+money(x*r)+"<br>Scenario: "+fk(sc[i])+" kgal, "+money(sc[i]*r)+"<br>Difference: "+fk(x-sc[i])+" kgal, "+money((x-sc[i])*r);
+    s+="<rect class='b' tabindex='0' x='"+bx+"' y='"+(H-pb-h1)+"' width='"+w+"' height='"+h1+"' rx='2' fill='var(--cyan)' data-t=\""+t+"\"/><rect class='b' tabindex='0' x='"+(bx+w+2)+"' y='"+(H-pb-h2)+"' width='"+w+"' height='"+h2+"' rx='2' fill='var(--blue)' data-t=\""+t+"\"/><text x='"+(pl+i*bw+bw/2)+"' y='"+(H-6)+"' text-anchor='middle'>"+m[i]+"</text>"});
+  $("ch2").innerHTML=s+"</svg>";bind($("cw2"),$("tip2"));
+  $("flag").textContent=$("incS").checked?"Limitation: placeholder flat rates, no tiers or fixed fees. Treat results as a rough planning range, not a guarantee.":"Limitation: sewer charges are excluded, so costs are likely understated.";
+}
+function all(){leak();scen();renderUp()}
+function setMode(x){mode=x;$("mPct").setAttribute("aria-pressed",x==="pct");$("mVol").setAttribute("aria-pressed",x==="vol");$("mLeak").setAttribute("aria-pressed",x==="leak");$("pctBox").hidden=x!=="pct";$("volBox").hidden=x!=="vol";scen()}
+$("mPct").onclick=function(){setMode("pct")};$("mVol").onclick=function(){setMode("vol")};$("mLeak").onclick=function(){setMode("leak")};
+
+function setSim(key){
+  SIM.cur=SIM[key]||DEMO;var src=SIM.cur,b=$("bld");
+  b.innerHTML="<option value='demo'>"+esc(DEMO.label)+"</option>"+(SIM.up?"<option value='up'>"+esc(SIM.up.label)+"</option>":"");
+  b.value=src.key;
+  var n=src.use.length,sel=$("period"),prev=+sel.value||12,opts=[3,6,12].filter(function(x){return x<n});opts.push(n);
+  sel.innerHTML=opts.map(function(x){return "<option value='"+x+"'>"+(x===n&&[3,6,12].indexOf(x)<0?"All "+x+" months":"Last "+x+" months")+"</option>"}).join("");
+  sel.value=opts.indexOf(prev)>=0?prev:n;
+  var vol=$("vol"),mxu=Math.max.apply(null,src.use),vmax=src.key==="up"?Math.max(5,Math.ceil(mxu/5)*5):150;
+  vol.max=vmax;vol.step=vmax<=60?1:5;if(+vol.value>vmax)vol.value=Math.round(vmax/3);
+  var hasLeak=!!(src.leak&&src.leak.some(function(x){return x>0}));$("mLeak").hidden=!hasLeak;
+  $("srcNote").hidden=src.key!=="up";$("srcNote").textContent=src.key==="up"?"Using your upload: "+src.name+", "+src.range+". Only full months are included.":"";
+  if(!hasLeak&&mode==="leak")setMode("pct");else scen();
+}
+$("bld").addEventListener("change",function(){setSim(this.value)});
+["gpm","start","resp","days","rw","rs","incS"].forEach(function(i){$(i).addEventListener("input",function(){syncRates(false);all()})});
+["period","pct","vol"].forEach(function(i){$(i).addEventListener("input",scen)});
+document.querySelectorAll("[data-v]").forEach(function(b){b.onclick=function(){document.querySelectorAll("[data-v]").forEach(function(o){o.setAttribute("aria-pressed",o===b)})}});
+
+/* tabs */
+var tabs=[$("t1"),$("t2"),$("t3")],pans=[$("tab1"),$("tab2"),$("tab3")];
+function showTab(i,focus){tabs.forEach(function(x,j){x.setAttribute("aria-selected",i===j);x.tabIndex=i===j?0:-1;pans[j].hidden=i!==j});if(focus)tabs[i].focus();if(i===2)drawUpCharts()}
+tabs.forEach(function(t,i){t.onclick=function(){showTab(i)};t.addEventListener("keydown",function(e){var k=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;if(k){e.preventDefault();showTab((i+k+3)%3,true)}})});
+$("goUpload").onclick=function(){showTab(2);$("tab3").scrollIntoView({behavior:"smooth",block:"start"});$("file").focus({preventScroll:true})};
+var P={leak:["vol",43],upgrade:["pct",15],habit:["pct",5]};
+document.querySelectorAll("[data-p]").forEach(function(b){b.onclick=function(){var k=b.getAttribute("data-p");if(k==="leak"&&!$("mLeak").hidden){setMode("leak");return}var p=P[k];$(p[0]).value=Math.min(p[1],+$(p[0]).max);setMode(p[0]==="vol"?"vol":"pct")}});
+
+/* rates live in two places; keep them in step */
+function syncRates(from3){var a=["rw","rs","incS"],b=["rw3","rs3","incS3"];a.forEach(function(id,i){var s=$(from3?b[i]:id),t=$(from3?id:b[i]);if(s.type==="checkbox")t.checked=s.checked;else t.value=s.value})}
+["rw3","rs3","incS3"].forEach(function(i){$(i).addEventListener("input",function(){syncRates(true);all()})});
+["aAlert","aCrew","aReg"].forEach(function(i){$(i).addEventListener("input",renderUp)});
+
+/* ---------- upload ---------- */
+var UP={files:[],res:null,sel:0};
+function fmtDate(t,o){return new Date(t).toLocaleDateString("en-US",Object.assign({timeZone:"UTC"},o||{month:"short",day:"numeric"}))}
+function dY(t){return fmtDate(t,{month:"short",day:"numeric",year:"numeric"})}
+function dW(t){return fmtDate(t,{weekday:"short",month:"short",day:"numeric"})}
+function yr(t){return new Date(t).getUTCFullYear()}
+function range(a,b,withYear){var A=new Date(a),B=new Date(b),y=withYear===false?"":", "+B.getUTCFullYear();if(a===b)return fmtDate(a)+y;if(A.getUTCFullYear()!==B.getUTCFullYear())return dY(a)+" – "+dY(b);if(A.getUTCMonth()===B.getUTCMonth())return fmtDate(a)+"–"+B.getUTCDate()+y;return fmtDate(a)+" – "+fmtDate(b)+y}
+function dtH(t){var d=new Date(t);return fmtDate(t)+", "+hr(d.getUTCHours())}
+var DOWN=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function basisText(d){return d.basis==="dow"?"a normal "+DOWN[d.dow]:d.basis==="weekend"?"a normal weekend day":d.basis==="weekday"?"a normal weekday":"a normal day"}
+function plural(n,w,ws){return n+" "+(n===1?w:(ws||w+"s"))}
+function listJoin(a){return a.length<2?a.join(""):a.slice(0,-1).join(", ")+" and "+a[a.length-1]}
+function times(x){return x>=10?Math.round(x)+"×":(Math.round(x*10)/10)+"×"}
+
+function addFiles(list){
+  var arr=Array.prototype.slice.call(list||[]).filter(function(f){return /\.(csv|txt)$/i.test(f.name)||/csv|text/.test(f.type)});
+  if(!arr.length){msg("Those don't look like CSV files.",true);return}
+  msg("Reading "+plural(arr.length,"file")+"…");
+  Promise.all(arr.map(function(f){return f.text().then(function(t){return {name:f.name,text:t}})})).then(addTexts).catch(function(){msg("Couldn't read that file.",true)});
+}
+function addTexts(items){
+  items.forEach(function(it){
+    UP.files=UP.files.filter(function(f){return f.name!==it.name});
+    var parsed;try{parsed=E.readFile(it.name,it.text)}catch(e){parsed={name:it.name,sensors:[],notes:[],error:"Couldn't read this file."}}
+    UP.files.push({name:it.name,parsed:parsed});
+  });
+  runAnalysis();
+}
+function runAnalysis(){
+  var ok=UP.files.filter(function(f){return !f.parsed.error});
+  UP.res=ok.length?E.analyze(ok.map(function(f){return f.parsed})):null;UP.sel=0;
+  renderChips();
+  var flows=UP.res?usableFlows():[];
+  if(flows.length){var f=flows[0],s=E.simSeries(f);
+    SIM.up=s.use.length?{key:"up",label:f.sensor.name+" (your upload)",name:f.sensor.name,months:s.months,use:s.use,leak:s.leak,range:s.months[0]+" "+s.years[0]+" to "+s.months[s.months.length-1]+" "+s.years[s.years.length-1]}:null}
+  else SIM.up=null;
+  setSim(SIM.up?"up":"demo");
+  if(!UP.res){msg(UP.files.length?"We couldn't find flow or temperature readings in these files.":"",!!UP.files.length);$("results").hidden=true;return}
+  var n=UP.res.flows.length,t=UP.res.temps?UP.res.temps.sensors.length:0;
+  msg("Read "+plural(UP.files.length,"file")+": "+(n?plural(n,"flow meter"):"no flow meter")+(t?", "+plural(t,"temperature sensor"):"")+".");
+  renderUp();
+  $("results").hidden=false;drawUpCharts();
+}
+function usableFlows(){return UP.res.flows.filter(function(f){return !f.error&&f.days})}
+function msg(t,bad){var m=$("upMsg");m.textContent=t||"";m.className="up-msg"+(bad?" er":"")}
+function renderChips(){
+  $("chips").innerHTML=UP.files.map(function(f,i){var p=f.parsed,ds;
+    if(p.error)ds="<span class='er'>"+esc(p.error)+"</span>";
+    else{var fl=p.sensors.filter(function(s){return s.kind==="flow"}).length,tp=p.sensors.filter(function(s){return s.kind==="temp"}).length;ds="<span class='ds'>"+num(p.rows)+" rows · "+[fl?plural(fl,"flow column"):"",tp?plural(tp,"temperature column"):""].filter(Boolean).join(", ")+"</span>"}
+    return "<li><span><span class='nm'>"+esc(f.name)+"</span><br>"+ds+"</span><button type='button' data-rm='"+i+"' aria-label='Remove "+esc(f.name)+"'>×</button></li>"}).join("");
+  $("chips").querySelectorAll("[data-rm]").forEach(function(b){b.onclick=function(){UP.files.splice(+b.getAttribute("data-rm"),1);runAnalysis()}});
+  $("clearFiles").hidden=!UP.files.length;
+}
+var drop=$("drop");
+["dragenter","dragover"].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add("over")})});
+["dragleave","dragend"].forEach(function(ev){drop.addEventListener(ev,function(){drop.classList.remove("over")})});
+drop.addEventListener("drop",function(e){e.preventDefault();drop.classList.remove("over");addFiles(e.dataTransfer&&e.dataTransfer.files)});
+$("file").addEventListener("change",function(){addFiles(this.files);this.value=""});
+$("useSample").onclick=function(){addTexts(["sample-flow","sample-temp"].map(function(id){var el=$(id);return {name:el.getAttribute("data-name"),text:el.textContent.replace(/^\n/,"")}}))};
+$("clearFiles").onclick=function(){UP.files=[];runAnalysis();msg("")};
+$("meterSel").addEventListener("change",function(){UP.sel=+this.value;renderUp();drawUpCharts()});
+$("dlCsv").onclick=function(){var f=usableFlows()[UP.sel];if(!f)return;var b=new Blob([E.dailyCSV(f)],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=(f.sensor.name||"meter").replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"-daily-results.csv";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500)};
+
+/* ---------- results ---------- */
+function opts(){return {rate:rate(),alertHours:Math.max(0,+$("aAlert").value||0),crewHours:Math.max(0,+$("aCrew").value||0),regularDays:Math.max(1,+$("aReg").value||30)}}
+function renderUp(){
+  if(!UP.res)return;
+  var flows=usableFlows(),f=flows[UP.sel]||null,temps=UP.res.temps,o=opts(),P=f?E.price(f,o):null;
+  $("meterRow").hidden=flows.length<2;
+  if(flows.length>1)$("meterSel").innerHTML=flows.map(function(x,i){return "<option value='"+i+"'"+(i===UP.sel?" selected":"")+">"+esc(x.sensor.name)+"</option>"}).join("");
+  $("rLeaks").hidden=!f;$("rMore").hidden=!f;$("dailyBox").hidden=!f;$("dlCsv").hidden=!f;
+  renderSummary(f,temps,P,o);
+  if(f){renderLeaks(f,o);renderMore(f,o)}
+  renderHot(temps,f);
+  renderChecks(f,temps);
+  drawUpCharts();
+}
+function renderSummary(f,temps,P,o){
+  var hl=$("headline"),k=$("upKpis");
+  if(!f){
+    $("sumSub").textContent=temps?"Temperature data only":"";
+    hl.className="headline ok";hl.textContent="No flow meter readings in these files, so we can't check for leaks. Add a flow export to see leaks and costs. Hot water findings are below.";
+    k.innerHTML="";return;
+  }
+  var days=f.days.filter(function(d){return d.status==="ok"}).length;
+  $("sumSub").textContent=f.sensor.name+" · "+dY(f.days[0].t)+" to "+dY(f.days[f.days.length-1].t)+" · "+plural(days,"day")+" checked"+(f.resolution==="subdaily"?" · readings every "+fk(f.stepMin)+" min":"");
+  var L=f.likely,ps=f.possible.length,txt;
+  if(L.length){
+    var big=L.slice().sort(function(a,b){return b.excess-a.excess})[0];
+    txt=(L.length===1?"1 likely leak: "+range(big.startT,big.endT)+". It used about "+num(P.leakGal)+" extra gallons, which cost "+money(P.leakCost)+".":plural(L.length,"likely leak")+", the biggest "+range(big.startT,big.endT)+". Together they used about "+num(P.leakGal)+" extra gallons ("+money(P.leakCost)+").")+" A Nexa alert could have saved about "+money(P.savedCost)+" of that."+(L.some(function(e){return e.ongoing})?" One is still running at the last reading.":"")+(ps?" "+plural(ps,"shorter rise")+" "+(ps===1?"is":"are")+" also worth a look.":"");
+    hl.className="headline";
+  }else{
+    txt=ps?"No clear leaks. "+plural(ps,"shorter rise")+" "+(ps===1?"is":"are")+" worth a look below.":"No leaks found. Use stayed in its normal range on every day we could check.";
+    hl.className="headline ok";
+  }
+  hl.textContent=txt;
+  var pt=f.patterns||{};
+  k.innerHTML=L.length?"<div><span>Likely leaks</span><b>"+L.length+"</b></div><div><span>Extra water</span><b>"+num(P.leakGal)+" gal</b></div><div><span>Cost of that water</span><b class='bad'>"+money(P.leakCost)+"</b></div><div><span>Nexa could have saved</span><b class='good'>"+money(P.savedCost)+"</b></div>"
+    :"<div><span>Likely leaks</span><b>0</b></div><div><span>Normal weekday</span><b>"+(isFinite(pt.weekday)?num(pt.weekday)+" gal":"n/a")+"</b></div><div><span>Normal weekend day</span><b>"+(isFinite(pt.weekend)?num(pt.weekend)+" gal":"n/a")+"</b></div><div><span>Days checked</span><b>"+num(days)+"</b></div>";
+  $("dLegend").innerHTML="<span><i style='background:var(--c-norm)'></i>Normal use</span>"+(f.leaks.length?"<span><i style='background:var(--c-lost)'></i>Extra water in a leak</span>":"")+(f.spikes.length?"<span><i style='background:var(--c-spike)'></i>Short spike</span>":"")+(f.quality.glitches.length?"<span><i style='background:var(--mute)'></i>Left out (bad reading)</span>":"");
+  $("dTblBody").innerHTML="";if($("dTbl").open)fillDays();
+}
+$("dTbl").addEventListener("toggle",function(){if(this.open&&!$("dTblBody").innerHTML)fillDays()});
+function fillDays(){var f=usableFlows()[UP.sel];if(!f)return;
+  $("dTblBody").innerHTML="<table class='mini'><thead><tr><th>Day</th><th>Gallons</th><th>Normal</th><th>Extra</th><th>Status</th></tr></thead><tbody>"+f.days.map(function(d){return "<tr><td>"+dW(d.t)+"</td><td>"+(d.total==null?"":num(d.total))+"</td><td>"+(d.base==null?"":num(d.base))+"</td><td>"+(d.event&&d.status==="ok"&&d.extra?num(d.extra):"")+"</td><td>"+dayStatus(d)+"</td></tr>"}).join("")+"</tbody></table>"}
+function dayStatus(d){var e=d.event;if(d.status==="glitch")return "Left out";if(d.status==="offline")return "No flow recorded";if(d.status==="missing")return "No reading";if(d.status==="partial")return "Partial day";if(e&&e.type==="leak")return e.confidence==="likely"?"Likely leak":"Possible leak";if(e&&e.notable)return "Short spike";return "Normal"}
+
+function renderLeaks(f,o){
+  var L=f.likely,box=$("leakList"),h="";
+  $("aRegRow").hidden=!L.some(function(e){return e.ongoing});
+  if(!f.leaks.length){box.innerHTML="<p>No multi-day leaks in this data."+(f.spikes.length?" The short spikes are described below.":"")+"</p>";return}
+  L.slice().sort(function(a,b){return b.excess-a.excess}).forEach(function(ev,i){
+    var idx=f.events.indexOf(ev),pct=ev.excess?Math.round(100*ev.savedGal/ev.excess):0,stopH=o.alertHours+o.crewHours;
+    h+="<article class='ev' aria-labelledby='ev"+idx+"'><div class='ev-head'><span class='badge bad'>"+(ev.ongoing?"Still running":"Likely leak")+"</span><h3 id='ev"+idx+"'>"+range(ev.startT,ev.endT)+"</h3><span class='dur'>"+plural(ev.days,"day")+"</span></div>";
+    h+="<div class='two'><div><dl class='facts'>";
+    h+="<div><dt>Extra water</dt><dd>"+num(ev.excess)+" gal"+(ev.normalDays?"<small>about "+plural(Math.max(1,Math.round(ev.normalDays)),"day")+" of normal use</small>":"")+"</dd></div>";
+    h+="<div><dt>Cost of that water</dt><dd>"+money(ev.cost)+"<small>at $"+o.rate.toFixed(2)+" per 1,000 gal</small></dd></div>";
+    h+="<div><dt>Leak rate</dt><dd>about "+(Math.round(ev.gpm*10)/10)+" gal/min<small>"+num(ev.avgPerDay)+" extra gal a day</small></dd></div>";
+    if(ev.peak)h+="<div><dt>Worst day</dt><dd>"+dW(ev.peak.t)+": "+num(ev.peak.total)+" gal<small>"+(ev.peak.ratio?times(ev.peak.ratio)+" "+basisText(f.days.filter(function(d){return d.t===ev.peak.t})[0]):"")+"</small></dd></div>";
+    if(ev.nonstop)h+="<div><dt>Water never stopped</dt><dd>"+num(ev.nonstop.hours)+" hours<small>"+dtH(ev.nonstop.start)+" to "+dtH(ev.nonstop.end)+"</small></dd></div>";
+    h+="</dl><div class='cmp'><div class='r'><span>"+(ev.ongoing?"So far, with no alert":"As it happened")+"</span><strong>"+money(ev.cost)+"</strong><p>"+num(ev.excess)+" gal over "+plural(ev.days,"day")+"</p></div><div class='n'><span>With a Nexa alert</span><strong>"+money(ev.nexaCost)+"</strong><p>"+num(ev.nexaGal)+" gal: "+o.alertHours+" h to alert + "+o.crewHours+" h to fix</p></div></div>";
+    h+="<p class='saved'>"+(ev.savedGal>0?"A Nexa alert could have saved about <b>"+money(ev.savedCost)+"</b> ("+pct+"%) and "+num(ev.savedGal)+" gallons on this leak.":"With these assumptions the alert comes after the leak ended, so nothing is saved.")+"</p>";
+    if(ev.ongoing)h+="<p class='saved'>If it keeps running until someone notices ("+o.regularDays+" days in), it will have cost about <b>"+money(ev.projectedGal/1000*o.rate)+"</b>.</p>";
+    h+=clueHTML(ev.clue);
+    h+="<div class='ev-actions'><button class='btn ghost' type='button' data-replay='"+idx+"'>Replay in the live demo</button>"+(SIM.up?"<button class='btn ghost' type='button' data-sim='1'>See it in the cost simulator</button>":"")+"</div></div>";
+    h+="<div><div class='legend'><span><i style='background:var(--c-norm)'></i>Normal use</span><span><i style='background:var(--c-lost)'></i>Lost before the fix</span><span><i style='background:var(--c-saved)'></i>Saved by a Nexa alert</span></div><div class='chartwrap' id='cwE"+idx+"'><div class='evchart' data-ev='"+idx+"'></div><div class='tip' role='status'></div></div><p class='sub' style='margin-top:8px'>Bars cover a week either side. The marker shows when the crew would stop it, "+stopH+" hours after the leak started.</p></div></div></article>";
+  });
+  if(f.possible.length){
+    h+="<h3>Worth a look</h3><p class='sub'>Shorter or milder rises. They could be small leaks or planned work like flushing.</p><div class='scroll'><table class='mini'><thead><tr><th>When</th><th>Days</th><th>Extra water</th><th>Cost</th><th>Note</th></tr></thead><tbody>";
+    f.possible.forEach(function(ev){h+="<tr><td>"+range(ev.startT,ev.endT)+"</td><td>"+ev.days+"</td><td>"+num(ev.excess)+" gal</td><td>"+money(ev.cost)+"</td><td>"+(ev.clue?esc(clueShort(ev.clue)):(ev.peak&&ev.peak.ratio?"Peak "+times(ev.peak.ratio)+" normal":""))+"</td></tr>"});
+    h+="</tbody></table></div>";
+  }
+  box.innerHTML=h;
+  box.querySelectorAll("[data-replay]").forEach(function(b){b.onclick=function(){replay(f.events[+b.getAttribute("data-replay")])}});
+  box.querySelectorAll("[data-sim]").forEach(function(b){b.onclick=function(){setSim("up");setMode("leak");showTab(0);$("tab1").scrollIntoView({behavior:"smooth",block:"start"})}});
+}
+function clueHTML(c){
+  if(!c)return "";var s=[];
+  if(c.onT&&c.offT)s.push("The hot water system switched on around "+fmtDate(c.onT)+" and off around "+fmtDate(c.offT)+", the same days the extra water started and stopped.");
+  else if(c.onT)s.push("The hot water system switched on around "+fmtDate(c.onT)+", when the extra water started.");
+  else s.push("The extra water stopped when the hot water system switched off around "+fmtDate(c.offT)+".");
+  if(c.backT&&c.backNormal)s.push("When it came back on "+fmtDate(c.backT)+", flow stayed normal, so regular heating doesn't explain it.");
+  s.push("Worth checking for water going to drain while the system runs, such as a relief valve or a valve left open.");
+  return "<div class='clue'><b>Possible link to the hot water system</b>"+s.join(" ")+"</div>";
+}
+function clueShort(c){return c.onT&&c.offT?"Hot water on "+fmtDate(c.onT)+", off "+fmtDate(c.offT):c.onT?"Hot water came on "+fmtDate(c.onT):"Hot water went off "+fmtDate(c.offT)}
+function replay(ev){
+  $("gpm").value=Math.min(10,Math.max(0.5,Math.round(ev.gpm*10)/10));$("days").value=Math.min(60,Math.max(1,ev.days));
+  showTab(1);leak();$("tab2").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function renderMore(f,o){
+  var p=f.patterns,items=[],r=o.rate;
+  if(p&&isFinite(p.weekday)){
+    var s="A normal weekday uses about "+num(p.weekday)+" gal";
+    if(isFinite(p.weekend)&&p.weekday>0)s+=" and a weekend day about "+num(p.weekend)+" gal ("+Math.round(100*(1-p.weekend/p.weekday))+"% "+(p.weekend<p.weekday?"less":"more")+")";
+    var top=-1;[1,2,3,4,5].forEach(function(w){if(isFinite(p.dow[w])&&(top<0||p.dow[w]>p.dow[top]))top=w});
+    if(top>=0&&p.dow[top]>=1.15*p.weekday)s+=". "+DOWN[top]+"s run highest, about "+num(p.dow[top])+" gal";
+    items.push("<li><b>Normal use.</b> "+s+". At current rates a normal day costs about "+money(p.typical/1000*r)+".</li>");
+  }
+  var full=f.monthly.filter(function(m){return m.full});
+  if(full.length>=2){
+    var hi=full.reduce(function(a,b){return b.gal>a.gal?b:a}),lo=full.reduce(function(a,b){return b.gal<a.gal?b:a}),mn=function(m){return fmtDate(m.t,{month:"long"})};
+    var s2="Full months ranged from "+num(lo.gal)+" gal ("+mn(lo)+") to "+num(hi.gal)+" gal ("+mn(hi)+").";
+    if(hi.leak>0)s2+=" The leak added "+num(hi.leak)+" gal to "+mn(hi)+", about "+money(hi.leak/1000*r)+".";
+    items.push("<li><b>Month to month.</b> "+s2+"</li>");
+  }
+  if(f.spikes.length){
+    var big=f.spikes.slice().sort(function(a,b){return (b.peak.ratio||0)-(a.peak.ratio||0)})[0],bd=f.days.filter(function(d){return d.t===big.peak.t})[0];
+    items.push("<li class='warn'><b>Short spikes.</b> On "+plural(f.spikes.length,"occasion")+", use at least doubled for a day or two, then went back to normal. The biggest was "+dW(big.peak.t)+" ("+num(big.peak.total)+" gal, "+times(big.peak.ratio)+" "+basisText(bd)+"). Short spikes are often planned work like flushing or cleaning, so they aren't counted as leaks.</li>");
+  }
+  if(f.night&&f.night.applies)items.push("<li><b>Nights.</b> The quietest hours start around "+hr(f.night.quietStart)+", when flow normally drops to about "+fk(f.night.typical)+" gal an hour. Water that keeps flowing then is the clearest sign of a leak.</li>");
+  else if(f.night&&!f.night.applies)items.push("<li><b>Nights.</b> This meter never goes quiet at night, so the overnight check doesn't apply. Leaks are judged on daily totals.</li>");
+  $("moreList").innerHTML=items.join("")||"<li>Not enough normal days to describe patterns yet.</li>";
+  var ms=f.monthly.filter(function(m){return m.coverage>=0.5});
+  $("mLegend").innerHTML="<span><i style='background:var(--c-norm)'></i>Water use</span>"+(ms.some(function(m){return m.leak>0})?"<span><i style='background:var(--c-lost)'></i>Extra water in a leak</span>":"");
+  $("mTbl").innerHTML="<table class='mini'><thead><tr><th>Month</th><th>Gallons</th><th>Cost</th><th>Leak</th></tr></thead><tbody>"+ms.map(function(m){return "<tr><td>"+fmtDate(m.t,{month:"short",year:"numeric"})+(m.full?"":" (partial)")+"</td><td>"+num(m.gal)+"</td><td>"+money(m.gal/1000*r)+"</td><td>"+(m.leak?num(m.leak)+" gal":"")+"</td></tr>"}).join("")+"</tbody></table>";
+}
+
+function renderHot(t,f){
+  var box=$("rHot");
+  if(!t||!t.hot.length){box.hidden=true;return}
+  box.hidden=false;
+  var m=t.main,first=Math.min.apply(null,t.hot.map(function(h){return h.pts[0].t})),last=Math.max.apply(null,t.hot.map(function(h){return h.pts[h.pts.length-1].t}));
+  $("hotSub").textContent=plural(t.hot.length,"hot water sensor")+" · "+dY(first)+" to "+dY(last)+(m&&m.step>2*HOUR?" · one reading every "+fk(m.step/HOUR)+" hours, so times are approximate":"");
+  $("hLegend").innerHTML=t.hot.slice(0,4).map(function(h,i){return "<span><i class='ln' style='background:var(--c-l"+(i+1)+")'></i>"+esc(h.name)+"</span>"}).join("")+"<span><i style='background:var(--c-grow)'></i>Legionella growth range, 77–113°F</span><span><i style='background:var(--c-off)'></i>Hot water off</span>";
+  var items=[];
+  var off=m?m.cold.filter(function(c){return !c.atStart}):[];
+  if(m&&off.length){
+    var tot=sumA(off.map(function(c){return c.days})),lg=off.slice().sort(function(a,b){return b.days-a.days})[0];
+    items.push("<li class='bad'><b>Hot water was off for about "+plural(Math.round(tot),"day")+".</b> That's counting every time "+esc(m.name)+" fell below 100°F. The longest stretch was "+range(lg.start,lg.end||last)+" ("+plural(Math.round(lg.days),"day")+"), when it read "+Math.round(lg.lo)+"–"+Math.round(lg.hi)+"°F"+(lg.ongoing?", and it's still off at the last reading":"")+".</li>");
+    items.push("<li class='bad'><b>Legionella risk.</b> CDC says Legionella grows best between 77 and 113°F, and the water sat in that range while the system was off. It's worth confirming these shutdowns were planned and that the loop was flushed and reheated before going back in service.</li>");
+  }else if(m)items.push("<li><b>Hot water stayed on.</b> "+esc(m.name)+" never dropped below 100°F after start-up.</li>");
+  if(t.loop)items.push("<li><b>Loop heat loss.</b> When the system is on, water leaves the "+esc(t.loop.supply.replace(/ temperature$/i,""))+" at about "+t.loop.out.toFixed(1)+"°F and comes back at about "+t.loop.back.toFixed(1)+"°F, "+t.loop.drop.toFixed(1)+"°F cooler. "+(t.loop.back<120?"CDC guidance keeps circulating hot water at 120°F or hotter, so a return this cool is worth a look.":"")+"</li>");
+  if(t.contrast)items.push("<li><b>During the extra-flow days.</b> "+esc(t.contrast.name)+" ran about "+Math.round(t.contrast.during)+"°F, "+Math.abs(Math.round(t.contrast.diff))+"°F "+(t.contrast.diff>0?"hotter":"cooler")+" than its usual "+Math.round(t.contrast.other)+"°F when on.</li>");
+  $("hotList").innerHTML=items.join("");
+  $("hTbl").innerHTML=m&&m.cold.length?"<table class='mini'><thead><tr><th>Off from</th><th>Back on</th><th>Days</th><th>Range</th></tr></thead><tbody>"+m.cold.map(function(c){return "<tr><td>"+dY(c.start)+(c.atStart?" (start of data)":"")+"</td><td>"+(c.end?dY(c.end):"Still off")+"</td><td>"+fk(c.days)+"</td><td>"+Math.round(c.lo)+"–"+Math.round(c.hi)+"°F</td></tr>"}).join("")+"</tbody></table>":"<p class='sub'>No shutdowns found.</p>";
+}
+
+function renderChecks(f,t){
+  var items=[];
+  if(f){
+    var q=f.quality;
+    if(q.glitches.length){var g=q.glitches,mx=g.reduce(function(a,b){return b.total>a.total?b:a});
+      items.push("<li>Left out "+plural(g.length,"day")+" with readings that can't be right ("+range(g[0].t,g[g.length-1].t)+"). The largest was "+num(mx.total)+" gal in one day, "+(mx.times?"about "+num(mx.times)+"× a normal day":"")+". "+(g[0].t<=f.days[0].t+14*DAY?"These look like the meter starting up.":"Check the meter around these dates.")+"</li>")}
+    q.offline.forEach(function(o){items.push("<li>No flow was recorded "+range(o.start,o.end)+" ("+plural(o.days,"day")+"). "+(o.atStart?"The meter was probably not reporting yet.":o.atEnd?"The meter may have stopped reporting.":"The meter may have been offline.")+"</li>")});
+    if(q.missing)items.push("<li>"+plural(q.missing,"day")+" had no reading at all.</li>");
+    if(q.partial)items.push("<li>"+plural(q.partial,"day")+" had only part of the day recorded and were skipped for leak checks.</li>");
+    f.notes.forEach(function(n){items.push("<li>"+esc(n)+"</li>")});
+  }
+  UP.res.flows.filter(function(x){return x.error}).forEach(function(x){items.push("<li>"+esc(x.sensor.name)+": "+esc(x.error)+"</li>")});
+  if(t){
+    if(t.sparse.length)items.push("<li>"+esc(listJoin(t.sparse.map(function(s){return s.name}).sort()))+" "+(t.sparse.length>1?"have":"has")+" "+(t.sparse.every(function(s){return s.n===t.sparse[0].n})?plural(t.sparse[0].n,"reading")+(t.sparse.length>1?" each":""):"almost no readings")+", so "+(t.sparse.length>1?"they're":"it's")+" left out. Check that "+(t.sparse.length>1?"they're":"it's")+" connected.</li>");
+    if(t.main){var st=t.main.cold.filter(function(c){return c.atStart})[0];if(st)items.push("<li>The first hot water readings ("+range(st.start,st.end||st.start)+") were near room temperature, before the system was running.</li>")}
+    var cool=t.sensors.filter(function(s){return !s.hot});if(cool.length)items.push("<li>"+esc(listJoin(cool.map(function(s){return s.name})))+" never reached hot water temperatures, so "+(cool.length>1?"they're":"it's")+" not part of the hot water checks.</li>");
+  }
+  UP.res.notes.forEach(function(n){items.push("<li>"+esc(n)+"</li>")});
+  items.push("<li>Costs use the water and sewer rates set above. They're placeholders with no tiers or fixed fees, so swap in your utility's rates for real numbers.</li>");
+  $("checkList").innerHTML=items.join("");
+}
+
+/* ---------- charts (drawn at the real pixel width so text stays readable) ---------- */
+function niceMax(v){if(!(v>0))return 1;var e=Math.pow(10,Math.floor(Math.log10(v))),x=v/e;return (x<=1?1:x<=2?2:x<=2.5?2.5:x<=5?5:10)*e}
+function axisFmt(v){return v>=10000?(Math.round(v/100)/10).toLocaleString("en-US")+"K":num(v)}
+function roundTop(x,y,w,h,r){if(h<=0||w<=0)return "";r=Math.max(0,Math.min(r,w/2,h));return "M"+x+","+(y+h)+"V"+(y+r)+"Q"+x+","+y+" "+(x+r)+","+y+"H"+(x+w-r)+"Q"+(x+w)+","+y+" "+(x+w)+","+(y+r)+"V"+(y+h)+"Z"}
+/* stacked bar from the baseline up: segments [[value,color],...]; 2px surface gap between parts, round top */
+function stack(x,w,segs,y,base,gap){
+  var s="",y0=base,tot=0,last=-1;segs.forEach(function(g,i){if(g[0]>0)last=i});
+  segs.forEach(function(g,i){if(!(g[0]>0))return;tot+=g[0];var y1=y(tot),hh=y0-y1,gp=(i>0&&gap&&hh>gap+1)?gap:0;
+    if(i===last)s+="<path d='"+roundTop(x,y1,w,hh-gp,4)+"' fill='"+g[1]+"'/>";else s+="<rect x='"+x+"' y='"+y1+"' width='"+w+"' height='"+Math.max(0,hh-gp)+"' fill='"+g[1]+"'/>";
+    y0=y1});
+  return s;
+}
+function grid(W,pl,pr,pt,H,pb,mx,fmt){var s="";for(var g=0;g<=4;g++){var v=mx*g/4,yy=pt+(H-pt-pb)*(1-g/4);s+="<line x1='"+pl+"' x2='"+(W-pr)+"' y1='"+yy+"' y2='"+yy+"' stroke='var(--line)'/><text x='"+(pl-6)+"' y='"+(yy+4)+"' text-anchor='end'>"+fmt(v)+"</text>"}return s}
+function hits(wrap){
+  var tip=wrap.querySelector(".tip");
+  wrap.querySelectorAll("rect.hit").forEach(function(h){
+    var i=h.getAttribute("data-i"),bar=wrap.querySelector("g.bar[data-i='"+i+"']");
+    var on=function(e){if(bar)bar.classList.add("on");tipper(wrap,tip,{target:bar&&bar.firstChild?bar:h},h.getAttribute("data-t"))};
+    var off=function(){if(bar)bar.classList.remove("on");tip.style.opacity=0};
+    h.addEventListener("mouseenter",on);h.addEventListener("focus",on);h.addEventListener("mouseleave",off);h.addEventListener("blur",off);
+  });
+}
+function width(el){return Math.max(300,Math.round(el.clientWidth||680))}
+function drawUpCharts(){
+  if(!UP.res||$("tab3").hidden||$("results").hidden)return;
+  var f=usableFlows()[UP.sel];
+  if(f){drawDaily(f);drawMonthly(f);document.querySelectorAll(".evchart").forEach(function(el){drawEvent(f,f.events[+el.getAttribute("data-ev")],el)})}
+  if(UP.res.temps&&UP.res.temps.hot.length)drawHot(UP.res.temps);
+}
+function dayTip(d){
+  var e=d.event,h="<b>"+dW(d.t)+"</b>";
+  if(d.status==="glitch")return h+"Left out: "+num(d.total)+" gal"+(d.total>0&&d.base==null?"":"")+" can't be right for this meter.";
+  if(d.status==="offline")return h+"No flow recorded. The meter may have been offline.";
+  if(d.status==="missing")return h+"No reading for this day.";
+  h+=num(d.total)+" gal";
+  if(d.status==="partial")return h+". Only part of this day was recorded.";
+  if(d.base!=null)h+=". Normal for "+basisText(d).replace(/^a normal /,"a ")+": about "+num(d.base)+".";
+  if(e&&e.type==="leak")h+="<br>"+num(d.extra||0)+" gal extra, part of the "+(e.confidence==="likely"?"likely":"possible")+" leak "+range(e.startT,e.endT,false)+".";
+  else if(e&&e.notable)h+="<br>Short spike, "+times(d.ratio||0)+" normal.";
+  return h;
+}
+function drawDaily(f){
+  var el=$("chD"),W=width(el),H=250,pl=48,pr=6,pt=24,pb=26,days=f.days,N=days.length,bw=(W-pl-pr)/N;
+  var vals=days.filter(function(d){return d.status==="ok"||d.status==="partial"}).map(function(d){return d.total});
+  var mx=niceMax(Math.max.apply(null,vals.concat([1]))*1.04),y=function(v){return pt+(H-pt-pb)*(1-Math.min(v,mx)/mx)},base=H-pb;
+  var s="<svg viewBox='0 0 "+W+" "+H+"' width='"+W+"' height='"+H+"' role='img' aria-label='Daily water use with leaks marked'>"+grid(W,pl,pr,pt,H,pb,mx,axisFmt);
+  f.leaks.forEach(function(ev){var x0=pl+ev.first*bw,x1=pl+(ev.last+1)*bw;s+="<rect x='"+x0+"' y='"+pt+"' width='"+(x1-x0)+"' height='"+(H-pt-pb)+"' fill='var(--c-band)'/><text x='"+((x0+x1)/2)+"' y='"+(pt-8)+"' text-anchor='middle' style='fill:var(--ink);font-weight:600'>"+(ev.confidence==="likely"?"Leak":"Possible")+"</text>"});
+  var w=Math.max(1,Math.min(24,bw-(bw>=4?2:0))),gap=w>=6?2:0,gl=null;
+  days.forEach(function(d,i){
+    var x=pl+i*bw+(bw-w)/2,g="";
+    if(d.status==="ok"||d.status==="partial"){
+      var e=d.event,col=e&&e.type==="leak"?"var(--c-lost)":e&&e.notable?"var(--c-spike)":null;
+      if(col&&d.status==="ok"&&d.base!=null&&d.extra>0)g=stack(x,w,[[Math.min(d.total,d.base),"var(--c-norm)"],[d.total-Math.min(d.total,d.base),col]],y,base,gap);
+      else g=stack(x,w,[[d.total,"var(--c-norm)"]],y,base,0);
+      if(d.status==="partial")g="<g opacity='.45'>"+g+"</g>";
+    }else if(d.status==="glitch"){g="<path d='M"+(pl+i*bw+bw/2-4)+","+(pt+2)+"h8l-4,7z' fill='var(--mute)'/>";if(gl===null)gl=i}
+    s+="<g class='bar' data-i='"+i+"'>"+g+"</g>";
+  });
+  if(gl!==null){var gx=pl+gl*bw+bw/2+8;s+="<text x='"+gx+"' y='"+(pt+9)+"' style='fill:var(--mute)'>"+plural(f.quality.glitches.length,"bad reading")+" left out</text>"}
+  var lastM=-1,lastX=-99;days.forEach(function(d,i){var dt=new Date(d.t),mo=dt.getUTCMonth();if(mo===lastM)return;lastM=mo;
+    var left=new Date(Date.UTC(dt.getUTCFullYear(),mo+1,0)).getUTCDate()-dt.getUTCDate();if(dt.getUTCDate()>3&&left<10)return;
+    var x=pl+i*bw;if(x-lastX<30||x>W-24)return;lastX=x;s+="<text x='"+x+"' y='"+(H-8)+"'>"+fmtDate(d.t,{month:"short"})+"</text>"});
+  days.forEach(function(d,i){s+="<rect class='hit' x='"+(pl+i*bw)+"' y='"+pt+"' width='"+Math.max(bw,1)+"' height='"+(H-pt-pb)+"' fill='transparent' data-i='"+i+"' data-t=\""+dayTip(d)+"\"/>"});
+  el.innerHTML=s+"</svg>";hits($("cwD"));
+}
+function drawEvent(f,ev,el){
+  var a=Math.max(0,ev.first-7),b=Math.min(f.days.length-1,ev.last+7),list=f.days.slice(a,b+1),N=list.length;
+  var W=width(el),H=240,pl=48,pr=8,pt=34,pb=26,bw=(W-pl-pr)/N;
+  var mx=niceMax(Math.max.apply(null,list.map(function(d){return d.status==="ok"||d.status==="partial"?d.total:0}).concat([1]))*1.04),y=function(v){return pt+(H-pt-pb)*(1-Math.min(v,mx)/mx)},base=H-pb;
+  var s="<svg viewBox='0 0 "+W+" "+H+"' width='"+W+"' height='"+H+"' role='img' aria-label='Daily use around the leak, showing what a Nexa alert could save'>"+grid(W,pl,pr,pt,H,pb,mx,axisFmt);
+  var w=Math.max(2,Math.min(24,bw-2)),gap=w>=6?2:0;
+  list.forEach(function(d,i){
+    var x=pl+i*bw+(bw-w)/2,g="";
+    if(d.status==="ok"||d.status==="partial"){
+      if(d.event===ev&&d.status==="ok"&&d.base!=null)g=stack(x,w,[[Math.min(d.total,d.base),"var(--c-norm)"],[d.lostPart||0,"var(--c-lost)"],[d.savedPart||0,"var(--c-saved)"]],y,base,gap);
+      else g=stack(x,w,[[d.total,"var(--c-norm)"]],y,base,0);
+    }
+    s+="<g class='bar' data-i='"+i+"'>"+g+"</g>";
+  });
+  var t0=list[0].t,xAt=function(t){return pl+(t-t0)/DAY*bw},fx=xAt(ev.fixT);
+  if(fx>=pl&&fx<=W-pr)s+="<line x1='"+fx+"' x2='"+fx+"' y1='"+(pt-12)+"' y2='"+base+"' stroke='var(--ink)' stroke-width='1.5'/><text x='"+(fx+(fx>W-120?-4:4))+"' y='"+(pt-16)+"' text-anchor='"+(fx>W-120?"end":"start")+"' style='fill:var(--ink);font-weight:600'>Stopped with Nexa</text>";
+  var step=Math.max(1,Math.ceil(28/bw));
+  list.forEach(function(d,i){if(i%step)return;var dt=new Date(d.t),lab=dt.getUTCDate()===1||i===0?fmtDate(d.t):String(dt.getUTCDate());s+="<text x='"+(pl+i*bw+bw/2)+"' y='"+(H-8)+"' text-anchor='middle'>"+lab+"</text>"});
+  list.forEach(function(d,i){
+    var t="<b>"+dW(d.t)+"</b>"+(d.total==null?"No reading":num(d.total)+" gal");
+    if(d.event===ev&&d.status==="ok"){t+=". Normal about "+num(d.base)+".";if(d.extra>0)t+="<br>Extra "+num(d.extra)+" gal: "+num(d.lostPart||0)+" lost before the fix, "+num(d.savedPart||0)+" saved."}
+    s+="<rect class='hit' tabindex='0' x='"+(pl+i*bw)+"' y='"+pt+"' width='"+bw+"' height='"+(H-pt-pb)+"' fill='transparent' data-i='"+i+"' data-t=\""+t+"\"/>";
+  });
+  el.innerHTML=s+"</svg>";hits(el.parentNode);
+}
+function drawMonthly(f){
+  var el=$("chM"),ms=f.monthly.filter(function(m){return m.coverage>=0.5}),r=rate();
+  if(!ms.length){el.innerHTML="<p class='sub'>Not enough data for monthly totals.</p>";return}
+  var W=width(el),H=230,pl=48,pr=6,pt=22,pb=26,bw=(W-pl-pr)/ms.length,mx=niceMax(Math.max.apply(null,ms.map(function(m){return m.gal}))*1.08);
+  var y=function(v){return pt+(H-pt-pb)*(1-v/mx)},base=H-pb,w=Math.min(24,bw*.5);
+  var s="<svg viewBox='0 0 "+W+" "+H+"' width='"+W+"' height='"+H+"' role='img' aria-label='Water use by month'>"+grid(W,pl,pr,pt,H,pb,mx,axisFmt);
+  ms.forEach(function(m,i){
+    var x=pl+i*bw+(bw-w)/2,g=stack(x,w,[[m.gal-m.leak,"var(--c-norm)"],[m.leak,"var(--c-lost)"]],y,base,2);
+    s+="<g class='bar' data-i='"+i+"'"+(m.full?"":" opacity='.45'")+">"+g+"</g>";
+    s+="<text x='"+(pl+i*bw+bw/2)+"' y='"+(H-8)+"' text-anchor='middle'>"+fmtDate(m.t,{month:"short"})+"</text>";
+    if(m.leak>0)s+="<text x='"+(pl+i*bw+bw/2)+"' y='"+(y(m.gal)-6)+"' text-anchor='middle' style='fill:var(--ink);font-weight:600'>"+money(m.gal/1000*r)+"</text>";
+    var t="<b>"+fmtDate(m.t,{month:"long",year:"numeric"})+"</b>"+num(m.gal)+" gal, about "+money(m.gal/1000*r)+(m.leak?"<br>Leak: "+num(m.leak)+" gal ("+money(m.leak/1000*r)+")":"")+(m.full?"":"<br>Partial month: "+Math.round(m.covered)+" of "+m.daysInMonth+" days");
+    s+="<rect class='hit' tabindex='0' x='"+(pl+i*bw)+"' y='"+pt+"' width='"+bw+"' height='"+(H-pt-pb)+"' fill='transparent' data-i='"+i+"' data-t=\""+t+"\"/>";
+  });
+  el.innerHTML=s+"</svg>";hits($("cwM"));
+}
+function drawHot(t){
+  var el=$("chH"),W=width(el),H=260,pl=44,pr=8,pt=12,pb=26,ser=t.hot.slice(0,4);
+  var t0=Math.min.apply(null,ser.map(function(h){return h.pts[0].t})),t1=Math.max.apply(null,ser.map(function(h){return h.pts[h.pts.length-1].t}));
+  var lo=Math.min(70,Math.floor(Math.min.apply(null,ser.map(function(h){return h.min}))/10)*10),hi=Math.ceil((Math.max.apply(null,ser.map(function(h){return h.max}))+4)/10)*10;
+  var x=function(v){return pl+(W-pl-pr)*(v-t0)/Math.max(1,t1-t0)},y=function(v){return pt+(H-pt-pb)*(1-(v-lo)/(hi-lo))};
+  var s="<svg viewBox='0 0 "+W+" "+H+"' width='"+W+"' height='"+H+"' role='img' aria-label='Hot water temperatures over time'>";
+  s+="<rect x='"+pl+"' y='"+y(113)+"' width='"+(W-pl-pr)+"' height='"+(y(77)-y(113))+"' fill='var(--c-grow)'/>";
+  if(t.main)t.main.cold.forEach(function(c){var a=x(c.start),b=x(c.end||t1);if(b-a<1)return;s+="<rect x='"+a+"' y='"+pt+"' width='"+(b-a)+"' height='"+(H-pt-pb)+"' fill='var(--c-off)'/>";if(b-a>34)s+="<text x='"+((a+b)/2)+"' y='"+(pt+14)+"' text-anchor='middle' style='fill:var(--ink)'>Off</text>"});
+  for(var v=lo;v<=hi;v+=10){var yy=y(v);s+="<line x1='"+pl+"' x2='"+(W-pr)+"' y1='"+yy+"' y2='"+yy+"' stroke='var(--line)' opacity='.7'/><text x='"+(pl-6)+"' y='"+(yy+4)+"' text-anchor='end'>"+v+"°</text>"}
+  var mo=new Date(Date.UTC(new Date(t0).getUTCFullYear(),new Date(t0).getUTCMonth()+1,1)).getTime();
+  for(;mo<=t1;mo=Date.UTC(new Date(mo).getUTCFullYear(),new Date(mo).getUTCMonth()+1,1)){var xm=x(mo);if(xm<W-24)s+="<text x='"+xm+"' y='"+(H-8)+"' text-anchor='middle'>"+fmtDate(mo,{month:"short"})+"</text>"}
+  ser.forEach(function(h,i){s+="<path d='"+h.pts.map(function(p,j){return (j?"L":"M")+x(p.t).toFixed(1)+","+y(p.v).toFixed(1)}).join("")+"' fill='none' stroke='var(--c-l"+(i+1)+")' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/>"});
+  s+="<line id='hx' x1='0' x2='0' y1='"+pt+"' y2='"+(H-pb)+"' stroke='var(--mute)' opacity='0'/><g id='hdots'></g><rect id='hov' x='"+pl+"' y='"+pt+"' width='"+(W-pl-pr)+"' height='"+(H-pt-pb)+"' fill='transparent' tabindex='0' aria-label='Move across the chart to read temperatures'/>";
+  el.innerHTML=s+"</svg>";
+  var wrap=$("cwH"),tip=$("tipH"),ov=$("hov"),line=$("hx"),dots=$("hdots"),svg=el.querySelector("svg");
+  var near=function(h,tm){var best=null;h.pts.forEach(function(p){if(!best||Math.abs(p.t-tm)<Math.abs(best.t-tm))best=p});return best&&Math.abs(best.t-tm)<=1.5*h.step?best:null};
+  var show=function(tm){
+    var ref=near(ser[0],tm)||{t:tm},xx=x(ref.t),rows=[],dh="";
+    ser.forEach(function(h,i){var p=near(h,ref.t);if(p){rows.push("<span><i style='display:inline-block;width:12px;height:2px;background:var(--c-l"+(i+1)+");vertical-align:middle;margin-right:6px'></i><b style='display:inline'>"+p.v.toFixed(1)+"°F</b> "+esc(h.name)+"</span>");dh+="<circle cx='"+xx+"' cy='"+y(p.v)+"' r='4' fill='var(--c-l"+(i+1)+")' stroke='var(--surface)' stroke-width='2'/>"}});
+    line.setAttribute("x1",xx);line.setAttribute("x2",xx);line.setAttribute("opacity","1");dots.innerHTML=dh;
+    tip.innerHTML="<b>"+dtH(ref.t)+"</b>"+rows.join("<br>");tip.style.opacity=1;
+    var r=wrap.getBoundingClientRect(),sx=svg.getBoundingClientRect().width/W,px=xx*sx;
+    tip.style.left=Math.max(0,Math.min(px+12,r.width-tip.offsetWidth))+"px";tip.style.top="8px";
+  };
+  ov.addEventListener("pointermove",function(e){var b=svg.getBoundingClientRect(),px=(e.clientX-b.left)*W/b.width;show(t0+(px-pl)/(W-pl-pr)*(t1-t0))});
+  ov.addEventListener("pointerleave",function(){tip.style.opacity=0;line.setAttribute("opacity","0");dots.innerHTML=""});
+  var kt=t1;ov.addEventListener("focus",function(){show(kt)});ov.addEventListener("blur",function(){tip.style.opacity=0;line.setAttribute("opacity","0");dots.innerHTML=""});
+  ov.addEventListener("keydown",function(e){var k=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;if(!k)return;e.preventDefault();var p=ser[0].pts,i=p.findIndex(function(q){return q.t>=kt});i=Math.max(0,Math.min(p.length-1,(i<0?p.length-1:i)+k));kt=p[i].t;show(kt)});
+}
+var rz;window.addEventListener("resize",function(){clearTimeout(rz);rz=setTimeout(drawUpCharts,150)});
+
+setSim("demo");all();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "nexa-water-insights",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Water cost simulator and leak finder for Nexa sensor exports",
+  "scripts": {
+    "test": "node tests/engine.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
