@@ -6,7 +6,9 @@ Everything runs in the browser. Uploaded files are never sent anywhere.
 
 ## Use it
 
-Open `index.html` in any modern browser. No build step or server is needed.
+**Live site:** https://felixw1020.github.io/nexa-water-insights/
+
+Or open `index.html` in any modern browser. No build step or server is needed.
 
 1. Go to the **Your data** tab (or press "Analyze your sensor data" at the top).
 2. Drop in one or more CSV exports, or press "Try the Wilkinson sample".

@@ -193,6 +193,40 @@ test("same sensor in two files at different steps uses the detailed one", () => 
   assert.ok(r.notes.some((n) => /most detailed file/.test(n)));
 });
 
+test("semicolon CSV with Monnit-style headers", () => {
+  // the commas inside the quoted header must not win the delimiter vote
+  const lines = ['"timestamp";"monnit-1 (Test Meter, FlowVolume, gal)"'];
+  for (let i = 0; i < 40; i++) lines.push(`"${iso(Date.UTC(2026, 0, 1) + i * DAY)}";"${i >= 20 && i < 26 ? "4500,5" : "1500,5"}"`);
+  const f = E.analyze([E.readFile("s.csv", lines.join("\n"))]).flows[0];
+  assert.ok(f && !f.error, "flow not read");
+  assert.equal(Math.round(f.days[0].total), 1501);
+  assert.equal(f.likely.length, 1);
+});
+
+test("running meter total in a building that is quiet half the day", () => {
+  // busy only 8 AM-6 PM, so the total is flat for most readings
+  let acc = 5e5;
+  const rows = synth({}).map(([t, v]) => { const h = new Date(t).getUTCHours(); return [t, (acc += h >= 8 && h < 18 ? v : 0)]; });
+  const f = E.analyze([E.readFile("t.csv", toCSV(rows, "Main Meter (gal)"))]).flows[0];
+  assert.ok(f.notes.some((n) => /running meter total/.test(n)));
+  assert.equal(f.quality.glitches.length, 0);
+});
+
+test("day-first dates in 10-minute data are spotted past the first day", () => {
+  // the first ~2 days have day <= 12, so they read either way
+  const p = (n) => String(n).padStart(2, "0");
+  const lines = ["Date,Water use (gal)"];
+  for (const [t, v] of synth({ days: 30, start: Date.UTC(2026, 2, 11) })) {
+    const d = new Date(t);
+    lines.push(`${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())},${v}`);
+  }
+  const file = E.readFile("dmy.csv", lines.join("\n"));
+  assert.ok(!file.notes.some((n) => /couldn't read/.test(n)), file.notes.join(" | "));
+  const f = E.analyze([file]).flows[0];
+  assert.equal(iso(f.days[0].t), "2026-03-11");
+  assert.equal(f.days.length, 30);
+});
+
 test("rejects files without a time column", () => {
   const f = E.readFile("x.csv", "a,b\n1,2\n3,4");
   assert.ok(f.error);
